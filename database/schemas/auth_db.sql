@@ -7,6 +7,7 @@ USE auth_db;
 CREATE TABLE users (
   id CHAR(36) PRIMARY KEY,
   email VARCHAR(320) NOT NULL UNIQUE,
+  user_name VARCHAR(64) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   is_blocked TINYINT(1) NOT NULL DEFAULT 0,
