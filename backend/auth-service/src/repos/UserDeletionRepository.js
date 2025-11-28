@@ -7,6 +7,12 @@ export class UserDeletionRepository extends BaseRepository {
   }
 
   async softDelete(userDeletion) {
-    return this.create(userDeletion);
+    await this.create(userDeletion);
+    return new UserDeletion(userDeletion);
+  }
+
+  async findByUserId(userId) {
+    const rows = await this.findAll({ user_id: userId });
+    return rows.map(row => new UserDeletion(row));
   }
 }
