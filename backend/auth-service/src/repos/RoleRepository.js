@@ -13,4 +13,9 @@ export class RoleRepository extends BaseRepository {
     );
     return rows.length ? new Role(rows[0]) : null;
   }
+
+  async findAllRoles() {
+    const rows = await super.findAll();
+    return rows.map(row => new Role(row));
+  }
 }
