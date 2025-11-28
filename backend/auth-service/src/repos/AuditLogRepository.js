@@ -7,6 +7,17 @@ export class AuditLogRepository extends BaseRepository {
   }
 
   async logAction(auditLog) {
-    return this.create(auditLog);
+    await this.create(auditLog);
+    return new AuditLog(auditLog);
+  }
+
+  async findByActor(actorUserId) {
+    const rows = await this.findAll({ actor_user_id: actorUserId });
+    return rows.map(row => new AuditLog(row));
+  }
+
+  async findByTarget(targetUserId) {
+    const rows = await this.findAll({ target_user_id: targetUserId });
+    return rows.map(row => new AuditLog(row));
   }
 }
