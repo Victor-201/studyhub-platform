@@ -15,6 +15,14 @@ export class SessionRepository extends BaseRepository {
   }
 
   async revoke(id) {
-    await this.updateById(id, { revoked_at: new Date() });
+    const now = new Date();
+    await this.updateById(id, { revoked_at: now });
+    const updatedRow = await this.findById(id);
+    return updatedRow ? new Session(updatedRow) : null;
+  }
+
+  async findByUserId(userId) {
+    const rows = await this.findAll({ user_id: userId });
+    return rows.map(row => new Session(row));
   }
 }
