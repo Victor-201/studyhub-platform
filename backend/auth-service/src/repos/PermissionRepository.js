@@ -13,4 +13,9 @@ export class PermissionRepository extends BaseRepository {
     );
     return rows.length ? new Permission(rows[0]) : null;
   }
+
+  async findAllPermissions() {
+    const rows = await super.findAll();
+    return rows.map(row => new Permission(row));
+  }
 }
