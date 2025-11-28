@@ -1,18 +1,26 @@
 import express from "express";
-import { requireRole } from "../middlewares/role.js";
-export function createAdminRouter(AdminController, ReportController, verifyAccessToken) {
-  const router = express.Router();
-  router.use(verifyAccessToken, requireRole("admin"));
 
-  router.get("/users", (req, res) => AdminController.listUsers(req, res));
-  router.put("/users/:id/lock", (req, res) => AdminController.lockUser(req, res));
-  router.put("/users/:id/unlock", (req, res) => AdminController.unlockUser(req, res));
-  router.delete("/users/:id", (req, res) => AdminController.softDeleteUser(req, res));
-  router.put("/users/:id/restore", (req, res) => AdminController.restoreUser(req, res));
-  router.put("/users/:id/role", (req, res) => AdminController.updateRole(req, res));
-  router.put("/users/:id/block", (req, res) => AdminController.blockUser(req, res));
-  router.get("/reports/summary", (req, res) => ReportController.summaryReport(req, res));
-  router.get("/reports/export", (req, res) => ReportController.exportReport(req, res));
+/**
+ * @param {Object} deps
+ * @param {import("../controllers/AdminController.js").AdminController} deps.adminController
+ * @param {import("../controllers/ReportController.js").ReportController} deps.reportController
+ * @param {Function} deps.verifyAccessToken
+ */
+export function createAdminRouter({ adminController, reportController, verifyAccessToken }) {
+  const router = express.Router();
+  router.use(verifyAccessToken);
+
+  router.get("/users", adminController.listUsers.bind(adminController));
+  router.post("/users/:userId/lock", adminController.lockUser.bind(adminController));
+  router.post("/users/:userId/unlock", adminController.unlockUser.bind(adminController));
+  router.post("/users/:userId/block", adminController.blockUser.bind(adminController));
+  router.delete("/users/:userId", adminController.softDeleteUser.bind(adminController));
+  router.post("/users/:userId/restore", adminController.restoreUser.bind(adminController));
+  router.patch("/users/:userId/role", adminController.updateRole.bind(adminController));
+
+  router.get("/audit/logs", reportController.getAllLogs.bind(reportController));
+  router.get("/audit/logs/actor/:actorUserId", reportController.getLogsByActor.bind(reportController));
+  router.get("/audit/logs/target/:targetUserId", reportController.getLogsByTarget.bind(reportController));
 
   return router;
 }
