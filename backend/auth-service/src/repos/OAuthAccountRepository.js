@@ -1,4 +1,5 @@
 import { BaseRepository } from "./BaseRepository.js";
+import OAuthAccount from "../models/OAuthAccount.js";
 
 export class OAuthAccountRepository extends BaseRepository {
   constructor(pool) {
@@ -7,7 +8,7 @@ export class OAuthAccountRepository extends BaseRepository {
 
   async linkAccount(account) {
     await this.create(account);
-    return account;
+    return new OAuthAccount(account);
   }
 
   async find(provider, providerUserId) {
@@ -15,6 +16,6 @@ export class OAuthAccountRepository extends BaseRepository {
       `SELECT * FROM oauth_accounts WHERE provider = ? AND provider_user_id = ? LIMIT 1`,
       [provider, providerUserId]
     );
-    return rows[0] || null;
+    return rows[0] ? new OAuthAccount(rows[0]) : null;
   }
 }
