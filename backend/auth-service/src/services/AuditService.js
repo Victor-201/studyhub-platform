@@ -1,39 +1,42 @@
-import { v4 as uuidv4 } from "uuid";
-
 export class AuditService {
-  constructor({ auditLogRepo }) {
-    this.auditLogRepo = auditLogRepo;
+  /**
+   * @param {Object} deps
+   * @param {import("../repos/AuditLogRepository.js").AuditLogRepository} deps.auditRepo
+   */
+  constructor({ auditRepo }) {
+    this.auditRepo = auditRepo;
   }
 
   /**
-   * Ghi log hành động
-   * @param {string|null} actorUserId - Người thực hiện hành động
-   * @param {string|null} targetUserId - Người bị tác động
-   * @param {string} action - Tên hành động (login, delete_user,…)
-   * @param {string|null} resourceType - Loại resource tác động (user, session,…)
-   * @param {string|null} resourceId - ID resource
-   * @param {object|null} meta - Thông tin bổ sung (ip, userAgent,…)
+   * Log an action
+   * @param {{actor_user_id?:number,target_user_id?:number,action:string,meta?:Object,created_at?:Date}} payload
+   * @returns {Promise<Object>} created audit log entry
    */
-  async log({
-    actorUserId = null,
-    targetUserId = null,
-    action,
-    resourceType = null,
-    resourceId = null,
-    meta = null,
-  }) {
-    const log = {
-      id: uuidv4(),
-      actor_user_id: actorUserId,
-      target_user_id: targetUserId,
-      action,
-      resource_type: resourceType,
-      resource_id: resourceId,
-      meta: meta ? JSON.stringify(meta) : null,
-      created_at: new Date(),
+  async log(payload) {
+    const entry = {
+      actor_user_id: payload.actor_user_id || null,
+      target_user_id: payload.target_user_id || null,
+      action: payload.action,
+      meta: payload.meta || null,
+      created_at: payload.created_at || new Date(),
     };
 
-    await this.auditLogRepo.create(log);
-    return log;
+    return this.auditRepo.logAction(entry);
+  }
+
+  /**
+   * Get logs by actor
+   * @param {number} actorUserId
+   */
+  async getLogsByActor(actorUserId) {
+    return this.auditRepo.findByActor(actorUserId);
+  }
+
+  /**
+   * Get logs by target
+   * @param {number} targetUserId
+   */
+  async getLogsByTarget(targetUserId) {
+    return this.auditRepo.findByTarget(targetUserId);
   }
 }

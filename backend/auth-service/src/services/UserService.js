@@ -1,65 +1,102 @@
-import { v4 as uuidv4 } from "uuid";
-import bcrypt from "bcryptjs";
-
 export class UserService {
-  constructor({ userRepo, roleRepo, userRoleRepo }) {
+  /**
+   * @param {Object} deps
+   * @param {import("../repos/UserRepository.js").UserRepository} deps.userRepo
+   * @param {import("../repos/UserEmailRepository.js").UserEmailRepository} deps.userEmailRepo
+   * @param {import("../repos/AuditLogRepository.js").AuditLogRepository} deps.auditRepo
+   */
+  constructor({ userRepo, userEmailRepo, auditRepo }) {
     this.userRepo = userRepo;
-    this.roleRepo = roleRepo;
-    this.userRoleRepo = userRoleRepo;
+    this.userEmailRepo = userEmailRepo;
+    this.auditRepo = auditRepo;
   }
 
-  async register({ email, password }) {
-    const existingUser = await this.userRepo.findByEmail(email);
-    if (existingUser) throw new Error("Email already exists");
+  /**
+   * Get user profile by id
+   * @param {number} id
+   * @returns {Promise<Object|null>}
+   */
+  async getProfile(id) {
+    return this.userRepo.findById(id);
+  }
 
-    const userId = uuidv4();
-    const passwordHash = await bcrypt.hash(password, 10);
+  /**
+   * Update user profile fields (only allowed fields)
+   * @param {number} id
+   * @param {Object} fields
+   * @returns {Promise<Object>} updated user
+   */
+  async updateProfile(id, fields) {
+    // Only allow certain fields to be updated
+    const allowed = ["name", "bio", "avatar_url"];
+    const payload = {};
+    for (const k of allowed) if (k in fields) payload[k] = fields[k];
 
-    const user = await this.userRepo.create({
-      id: userId,
-      email,
-      password_hash: passwordHash,
-      is_active: 0, // Chưa active
-      is_blocked: 0,
-      is_email_verified: 0,
+    await this.userRepo.updateById(id, payload);
+    const updated = await this.userRepo.findById(id);
+
+    await this.auditRepo.logAction({
+      actor_user_id: id,
+      action: "UPDATE_PROFILE",
+      created_at: new Date(),
     });
 
-    // gán role default
-    const defaultRole = await this.roleRepo.findByName("user");
-    if (defaultRole) {
-      await this.userRoleRepo.create({
-        id: uuidv4(),
-        user_id: user.id,
-        role_id: defaultRole.id,
-      });
-    }
-
-    return user;
+    return updated;
   }
 
-  async markEmailVerified(userId) {
-    await this.userRepo.updateById(userId, { is_email_verified: 1, is_active: 1 });
+  /**
+   * List user emails
+   * @param {number} userId
+   * @returns {Promise<Array>} list of UserEmail instances
+   */
+  async listEmails(userId) {
+    return this.userEmailRepo.getUserEmails(userId);
   }
 
-  async changePassword(userId, oldPassword, newPassword) {
-    const user = await this.userRepo.findById(userId);
-    if (!user) throw new Error("User not found");
+  /**
+   * Add an email to a user
+   * @param {number} userId
+   * @param {string} email
+   * @returns {Promise<Object>} created UserEmail
+   */
+  async addEmail(userId, email) {
+    const existing = await this.userEmailRepo.findByEmail(email);
+    if (existing) throw new Error("Email already in use");
 
-    if (oldPassword) {
-      const valid = await bcrypt.compare(oldPassword, user.password_hash);
-      if (!valid) throw new Error("Old password is incorrect");
-    }
+    const row = await this.userEmailRepo.create({
+      user_id: userId,
+      email,
+      is_primary: 0,
+      created_at: new Date(),
+    });
 
-    const newHash = await bcrypt.hash(newPassword, 10);
-    await this.userRepo.updateById(userId, { password_hash: newHash });
-    return true;
+    await this.auditRepo.logAction({
+      actor_user_id: userId,
+      action: "ADD_EMAIL",
+      target_user_id: userId,
+      created_at: new Date(),
+    });
+
+    return row;
   }
 
-  async getByEmail(email) {
-    return this.userRepo.findByEmail(email);
-  }
+  /**
+   * Mark one of user's emails as primary
+   * @param {number} userId
+   * @param {number} emailId
+   * @returns {Promise<Object>} updated email
+   */
+  async setPrimaryEmail(userId, emailId) {
+    // markPrimary handles setting others to non-primary
+    const updated = await this.userEmailRepo.markPrimary(emailId, userId);
 
-  async getUserRoles(userId) {
-    return this.userRoleRepo.findByUserId(userId);
+    await this.auditRepo.logAction({
+      actor_user_id: userId,
+      action: "SET_PRIMARY_EMAIL",
+      target_user_id: userId,
+      created_at: new Date(),
+    });
+
+    return updated;
   }
 }
