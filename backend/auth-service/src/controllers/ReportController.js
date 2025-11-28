@@ -1,24 +1,36 @@
 export class ReportController {
-  constructor({ adminService }) {
-    this.adminService = adminService;
+  /**
+   * @param {Object} deps
+   * @param {import("../services/AuditService.js").AuditService} deps.auditService
+   */
+  constructor({ auditService }) {
+    this.auditService = auditService;
   }
 
-  async summaryReport(req, res) {
+  async getLogsByActor(req, res) {
     try {
-      const users = await this.adminService.listUsers();
-      const active = users.filter(u => u.is_active).length;
-      const blocked = users.filter(u => u.is_blocked).length;
-      res.json({ total: users.length, active, blocked });
+      const { actorUserId } = req.params;
+      const logs = await this.auditService.getLogsByActor(actorUserId);
+      res.json(logs);
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
   }
 
-  async exportReport(req, res) {
+  async getLogsByTarget(req, res) {
     try {
-      const users = await this.adminService.listUsers();
-      // Export CSV JSON for simplicity
-      res.json(users);
+      const { targetUserId } = req.params;
+      const logs = await this.auditService.getLogsByTarget(targetUserId);
+      res.json(logs);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
+  async getAllLogs(req, res) {
+    try {
+      const logs = await this.auditService.auditRepo.findAll();
+      res.json(logs);
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
