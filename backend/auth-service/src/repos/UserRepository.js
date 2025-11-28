@@ -11,6 +11,11 @@ export class UserRepository extends BaseRepository {
     return row ? new User(row) : null;
   }
 
+    async findByUserName(userName) {
+    const rows = await this.findAll({ user_name: userName });
+    return rows.length ? rows[0] : null;
+  }
+
   async findAll(where = {}, orderBy = "created_at DESC") {
     const rows = await super.findAll(where, orderBy);
     return rows.map(row => new User(row));
