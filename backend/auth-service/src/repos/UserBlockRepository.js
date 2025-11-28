@@ -7,6 +7,12 @@ export class UserBlockRepository extends BaseRepository {
   }
 
   async blockUser(userBlock) {
-    return this.create(userBlock);
+    await this.create(userBlock);
+    return new UserBlock(userBlock);
+  }
+
+  async findByUserId(userId) {
+    const rows = await this.findAll({ user_id: userId });
+    return rows.map(row => new UserBlock(row));
   }
 }
