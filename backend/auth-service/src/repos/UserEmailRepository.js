@@ -15,7 +15,8 @@ export class UserEmailRepository extends BaseRepository {
   }
 
   async getUserEmails(userId) {
-    return this.findAll({ user_id: userId }, "created_at ASC");
+    const rows = await this.findAll({ user_id: userId }, "created_at ASC");
+    return rows.map(row => new UserEmail(row));
   }
 
   async markPrimary(id, userId) {
@@ -24,5 +25,7 @@ export class UserEmailRepository extends BaseRepository {
       [userId]
     );
     await this.updateById(id, { is_primary: 1 });
+    const updatedRow = await this.findById(id);
+    return updatedRow ? new UserEmail(updatedRow) : null;
   }
 }
