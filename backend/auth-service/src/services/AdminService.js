@@ -1,154 +1,243 @@
+import crypto from "crypto";
+
 export class AdminService {
   /**
-   * @param {Object} deps
+   * @param {Object} deps - Dependency injection
    * @param {import("../repos/UserRepository.js").UserRepository} deps.userRepo
    * @param {import("../repos/UserRoleRepository.js").UserRoleRepository} deps.userRoleRepo
    * @param {import("../repos/UserBlockRepository.js").UserBlockRepository} deps.userBlockRepo
    * @param {import("../repos/UserDeletionRepository.js").UserDeletionRepository} deps.userDeletionRepo
    * @param {import("../repos/AuditLogRepository.js").AuditLogRepository} deps.auditRepo
+   * @param {import("../repos/RoleRepository.js").RoleRepository} deps.roleRepo
+   * @param {import("../repos/RolePermissionRepository.js").RolePermissionRepository} deps.rolePermissionRepo
+   * @param {import("../repos/PermissionRepository.js").PermissionRepository} deps.permissionRepo
+   * @param {import("../repos/UserEmailRepository.js").UserEmailRepository} deps.userEmailRepo
+   * @param {import("../repos/EmailTemplateRepository.js").EmailTemplateRepository} deps.emailTemplateRepo
    */
-  constructor({ userRepo, userRoleRepo, userBlockRepo, userDeletionRepo, auditRepo }) {
+  constructor({
+    userRepo,
+    userRoleRepo,
+    userBlockRepo,
+    userDeletionRepo,
+    auditRepo,
+    roleRepo,
+    rolePermissionRepo,
+    permissionRepo,
+    userEmailRepo,
+    emailTemplateRepo,
+  }) {
     this.userRepo = userRepo;
     this.userRoleRepo = userRoleRepo;
     this.userBlockRepo = userBlockRepo;
     this.userDeletionRepo = userDeletionRepo;
     this.auditRepo = auditRepo;
+    this.roleRepo = roleRepo;
+    this.rolePermissionRepo = rolePermissionRepo;
+    this.permissionRepo = permissionRepo;
+    this.userEmailRepo = userEmailRepo;
+    this.emailTemplateRepo = emailTemplateRepo;
   }
 
   /**
-   * List all users (admin scope)
-   * @returns {Promise<Array>} list of users
+   * List all users
+   * @returns {Promise<Array>} List of users
    */
   async listUsers() {
     return this.userRepo.findAll();
   }
 
   /**
-   * Lock user account
-   * @param {number} id - target user id
-   * @param {number} adminId - performing admin id
+   * Lock a user account
+   * @param {string} id - User ID
+   * @param {string} adminId - Admin performing the action
+   * @returns {Promise<boolean>}
    */
   async lockUser(id, adminId) {
-    await this.userRepo.updateById(id, { locked_at: new Date() });
-
+    if (!id || !adminId) throw new Error("Missing parameters");
+    await this.userRepo.updateById(id, { status: "blocked" });
     await this.auditRepo.logAction({
       actor_user_id: adminId,
       target_user_id: id,
       action: "LOCK_USER",
       created_at: new Date(),
     });
-
     return true;
   }
 
   /**
-   * Unlock user account
-   * @param {number} id
-   * @param {number} adminId
+   * Unlock a user account
+   * @param {string} id - User ID
+   * @param {string} adminId - Admin performing the action
+   * @returns {Promise<boolean>}
    */
   async unlockUser(id, adminId) {
-    await this.userRepo.updateById(id, { locked_at: null });
-
+    if (!id || !adminId) throw new Error("Missing parameters");
+    await this.userRepo.updateById(id, { status: "active" });
     await this.auditRepo.logAction({
       actor_user_id: adminId,
       target_user_id: id,
       action: "UNLOCK_USER",
       created_at: new Date(),
     });
-
     return true;
   }
 
   /**
-   * Block a user (record in user_blocks)
-   * @param {number} id
-   * @param {string} reason
-   * @param {number} adminId
+   * Block a user
+   * @param {string} id - User ID
+   * @param {string} reason - Reason for blocking
+   * @param {string} adminId - Admin performing the action
+   * @returns {Promise<boolean>}
    */
-  async blockUser(id, reason = "", adminId) {
+  async blockUser(id, reason, adminId) {
+    if (!id || !reason || !adminId) throw new Error("Missing parameters");
     await this.userBlockRepo.blockUser({
+      id: crypto.randomUUID(),
       user_id: id,
+      blocked_by: adminId,
       reason,
       created_at: new Date(),
+      is_permanent: false,
     });
-
     await this.auditRepo.logAction({
       actor_user_id: adminId,
       target_user_id: id,
       action: "BLOCK_USER",
       created_at: new Date(),
     });
-
     return true;
   }
 
   /**
-   * Soft-delete a user (add to user_deletions)
-   * @param {number} id
-   * @param {number} adminId
+   * Soft-delete a user
+   * @param {string} id - User ID
+   * @param {string} adminId - Admin performing the action
+   * @param {string} reason - Reason for deletion
+   * @returns {Promise<boolean>}
    */
-  async softDelete(id, adminId) {
+  async softDelete(id, adminId, reason) {
+    if (!id || !adminId || !reason) throw new Error("Missing parameters");
     await this.userDeletionRepo.softDelete({
+      id: crypto.randomUUID(),
       user_id: id,
-      deleted_at: new Date(),
+      deleted_by: adminId,
+      reason,
       created_at: new Date(),
     });
-
+    await this.userRepo.updateById(id, { status: "deleted" });
     await this.auditRepo.logAction({
       actor_user_id: adminId,
       target_user_id: id,
       action: "SOFT_DELETE_USER",
       created_at: new Date(),
     });
-
     return true;
   }
 
   /**
-   * Restore a soft-deleted user (remove deleted_at)
-   * @param {number} id
-   * @param {number} adminId
+   * Restore a soft-deleted user
+   * @param {string} id - User ID
+   * @param {string} adminId - Admin performing the action
+   * @returns {Promise<boolean>}
    */
   async restoreUser(id, adminId) {
-    // userDeletionRepo doesn't have direct restore method; update the original user record
-    await this.userDeletionRepo.updateById(id, { deleted_at: null }).catch(async () => {
-      // fallback: delete the deletion record if repository stores separate rows
-      // noop
-    });
-
-    await this.userRepo.updateById(id, { deleted_at: null }).catch(() => null);
-
+    if (!id || !adminId) throw new Error("Missing parameters");
+    const deletions = await this.userDeletionRepo.findByUserId(id);
+    for (const del of deletions) {
+      await this.userDeletionRepo.updateById(del.id, {
+        restored_at: new Date(),
+        restored_by: adminId,
+      });
+    }
+    await this.userRepo.updateById(id, { status: "active" });
     await this.auditRepo.logAction({
       actor_user_id: adminId,
       target_user_id: id,
       action: "RESTORE_USER",
       created_at: new Date(),
     });
-
     return true;
   }
 
   /**
-   * Update user's role by assigning a new user_roles record
-   * @param {number} userId
-   * @param {string} roleName
-   * @param {number} adminId
+   * Update a user's role
+   * @param {string} userId - User ID
+   * @param {string} roleName - Role name
+   * @param {string} adminId - Admin performing the action
+   * @returns {Promise<boolean>}
    */
   async updateRole(userId, roleName, adminId) {
-    // create new role assignment
+    if (!userId || !roleName || !adminId) throw new Error("Missing parameters");
+    const role = await this.roleRepo.findByName(roleName);
+    if (!role) throw new Error("Role not found");
     await this.userRoleRepo.assignRole({
+      id: crypto.randomUUID(),
       user_id: userId,
-      role: roleName,
-      created_at: new Date(),
+      role_id: role.id,
+      assigned_at: new Date(),
     });
-
     await this.auditRepo.logAction({
       actor_user_id: adminId,
       target_user_id: userId,
       action: "UPDATE_ROLE",
       created_at: new Date(),
     });
-
     return true;
+  }
+
+  /**
+   * Add permission to a role
+   * @param {string} roleName - Role name
+   * @param {string} permissionName - Permission name
+   * @returns {Promise<boolean>}
+   */
+  async addPermissionToRole(roleName, permissionName) {
+    if (!roleName || !permissionName) throw new Error("Missing parameters");
+    const role = await this.roleRepo.findByName(roleName);
+    const permission = await this.permissionRepo.findByName(permissionName);
+    if (!role || !permission) throw new Error("Role or Permission not found");
+    await this.rolePermissionRepo.assignPermission({
+      id: crypto.randomUUID(),
+      role_id: role.id,
+      permission_id: permission.id,
+      assigned_at: new Date(),
+    });
+    return true;
+  }
+
+  /**
+   * List all audit logs
+   * @returns {Promise<Array>}
+   */
+  async getAuditLogs() {
+    return this.auditRepo.findAll();
+  }
+
+  /**
+   * Get audit logs by actor user ID
+   * @param {string} actorUserId
+   * @returns {Promise<Array>}
+   */
+  async getAuditLogsByActor(actorUserId) {
+    if (!actorUserId) throw new Error("actorUserId required");
+    return this.auditRepo.findByActor(actorUserId);
+  }
+
+  /**
+   * Get audit logs by target user ID
+   * @param {string} targetUserId
+   * @returns {Promise<Array>}
+   */
+  async getAuditLogsByTarget(targetUserId) {
+    if (!targetUserId) throw new Error("targetUserId required");
+    return this.auditRepo.findByTarget(targetUserId);
+  }
+
+  /**
+   * List all email templates
+   * @returns {Promise<Array>}
+   */
+  async listEmailTemplates() {
+    return this.emailTemplateRepo.findAll();
   }
 }

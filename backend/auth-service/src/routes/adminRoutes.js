@@ -1,26 +1,25 @@
 import express from "express";
+import { AdminController } from "../controllers/AdminController.js";
+import { verifyAccessToken } from "../middlewares/auth.js";
+import { requireRole } from "../middlewares/role.js";
 
-/**
- * @param {Object} deps
- * @param {import("../controllers/AdminController.js").AdminController} deps.adminController
- * @param {import("../controllers/ReportController.js").ReportController} deps.reportController
- * @param {Function} deps.verifyAccessToken
- */
-export function createAdminRouter({ adminController, reportController, verifyAccessToken }) {
+export function createAdminRouter({ adminService }) {
   const router = express.Router();
-  router.use(verifyAccessToken);
+  const controller = new AdminController({ adminService });
 
-  router.get("/users", adminController.listUsers.bind(adminController));
-  router.post("/users/:userId/lock", adminController.lockUser.bind(adminController));
-  router.post("/users/:userId/unlock", adminController.unlockUser.bind(adminController));
-  router.post("/users/:userId/block", adminController.blockUser.bind(adminController));
-  router.delete("/users/:userId", adminController.softDeleteUser.bind(adminController));
-  router.post("/users/:userId/restore", adminController.restoreUser.bind(adminController));
-  router.patch("/users/:userId/role", adminController.updateRole.bind(adminController));
+  router.use(verifyAccessToken, requireRole("admin"));
 
-  router.get("/audit/logs", reportController.getAllLogs.bind(reportController));
-  router.get("/audit/logs/actor/:actorUserId", reportController.getLogsByActor.bind(reportController));
-  router.get("/audit/logs/target/:targetUserId", reportController.getLogsByTarget.bind(reportController));
+  router.get("/users", controller.listUsers.bind(controller));
+  router.post("/users/:userId/lock", controller.lockUser.bind(controller));
+  router.post("/users/:userId/unlock", controller.unlockUser.bind(controller));
+  router.post("/users/:userId/block", controller.blockUser.bind(controller));
+  router.delete("/users/:userId", controller.softDeleteUser.bind(controller));
+  router.post("/users/:userId/restore", controller.restoreUser.bind(controller));
+  router.patch("/users/:userId/role", controller.updateRole.bind(controller));
+
+  router.get("/audit/logs", controller.getAuditLogs.bind(controller));
+  router.get("/audit/logs/actor/:actorUserId", controller.getAuditLogsByActor.bind(controller));
+  router.get("/audit/logs/target/:targetUserId", controller.getAuditLogsByTarget.bind(controller));
 
   return router;
 }
