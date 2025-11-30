@@ -6,9 +6,14 @@ export class AuditLogRepository extends BaseRepository {
     super(pool, "audit_logs");
   }
 
-  async logAction(auditLog) {
-    await this.create(auditLog);
-    return new AuditLog(auditLog);
+  async logAction(logData) {
+    const payload = {
+      ...logData,
+      meta: logData.meta ? JSON.stringify(logData.meta) : null
+    };
+
+    const inserted = await this.create(payload);
+    return new AuditLog(inserted);
   }
 
   async findByActor(actorUserId) {
