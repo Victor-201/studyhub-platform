@@ -1,11 +1,11 @@
 import express from "express";
+import { OAuthController } from "../controllers/OAuthController.js";
 
-/**
- * @param {Object} deps
- * @param {import("../controllers/OAuthController.js").OAuthController} deps.oauthController
- */
-export function createOAuthRouter({ oauthController }) {
+export function createOAuthRouter({ oauthService, authService }) {
   const router = express.Router();
-  router.post("/login", oauthController.login.bind(oauthController));
+  const controller = new OAuthController({ oauthService, authService });
+
+  router.post("/login", controller.login.bind(controller));
+
   return router;
 }

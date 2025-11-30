@@ -6,10 +6,10 @@ export default class OAuthProvider {
   #createdAt;
 
   constructor(row = {}) {
-    this.#id = row.id || null;
-    this.#name = row.name || "";
-    this.#clientId = row.client_id || null;
-    this.#clientSecret = row.client_secret || null;
+    this.#id = row.id;
+    this.#name = row.name;
+    this.#clientId = row.client_id;
+    this.#clientSecret = row.client_secret;
     this.#createdAt = row.created_at ? new Date(row.created_at) : null;
   }
 

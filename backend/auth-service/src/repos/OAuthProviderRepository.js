@@ -8,14 +8,29 @@ export class OAuthProviderRepository extends BaseRepository {
 
   async findByName(name) {
     const [rows] = await this.pool.query(
-      `SELECT * FROM oauth_providers WHERE name = ? LIMIT 1`,
+      `SELECT * FROM ${this.table} WHERE name = ? LIMIT 1`,
       [name]
     );
-    return rows[0] ? new OAuthProvider(rows[0]) : null;
+    return rows.length ? new OAuthProvider(rows[0]) : null;
   }
 
-  async create(data) {
-    const result = await super.create(data);
-    return new OAuthProvider({ ...data, id: result.insertId });
+  async createProvider(data) {
+    const row = await this.create(data);
+    return new OAuthProvider(row);
+  }
+
+  async findAllProviders() {
+    const rows = await this.findAll();
+    return rows.map(row => new OAuthProvider(row));
+  }
+
+  async updateProvider(id, updateData) {
+    await this.updateById(id, updateData);
+    const updated = await this.findById(id);
+    return updated ? new OAuthProvider(updated) : null;
+  }
+
+  async deleteProvider(id) {
+    return await this.deleteById(id);
   }
 }
