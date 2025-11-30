@@ -6,10 +6,10 @@ export class PasswordResetRepository extends BaseRepository {
     super(pool, "password_resets");
   }
 
-  async findByHash(hash) {
+  async findByHash(tokenHash) {
     const [rows] = await this.pool.query(
-      `SELECT * FROM password_resets WHERE token_hash = ? AND used_at IS NULL LIMIT 1`,
-      [hash]
+      `SELECT * FROM ${this.table} WHERE token_hash = ? AND used_at IS NULL LIMIT 1`,
+      [tokenHash]
     );
     return rows.length ? new PasswordReset(rows[0]) : null;
   }
@@ -24,5 +24,14 @@ export class PasswordResetRepository extends BaseRepository {
   async findByUserId(userId) {
     const rows = await this.findAll({ user_id: userId });
     return rows.map(row => new PasswordReset(row));
+  }
+
+  async createReset(data) {
+    const row = await this.create(data);
+    return new PasswordReset(row);
+  }
+
+  async deleteReset(id) {
+    return await this.deleteById(id);
   }
 }

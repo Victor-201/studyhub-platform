@@ -12,7 +12,7 @@ export default class PasswordReset {
     this.#id = row.id;
     this.#userId = row.user_id;
     this.#tokenHash = row.token_hash;
-    this.#expiresAt = new Date(row.expires_at);
+    this.#expiresAt = row.expires_at ? new Date(row.expires_at) : null;
     this.#usedAt = row.used_at ? new Date(row.used_at) : null;
     this.#ip = row.ip;
     this.#userAgent = row.user_agent;
