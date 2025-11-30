@@ -1,24 +1,28 @@
-// src/repositories/BaseRepository.js
 export class BaseRepository {
   constructor(pool, table) {
     this.pool = pool;
     this.table = table;
   }
 
-  // Tạo record
+  #formatValue(value) {
+    if (value instanceof Date) {
+      return value.toISOString().slice(0, 19).replace("T", " ");
+    }
+    return value;
+  }
+
   async create(data) {
     const keys = Object.keys(data);
-    const values = Object.values(data);
+    const values = Object.values(data).map(v => this.#formatValue(v));
 
     const placeholders = keys.map(() => "?").join(", ");
-    const columns = keys.join(", ");
+    const columns = keys.join(",");
 
     const sql = `INSERT INTO ${this.table} (${columns}) VALUES (${placeholders})`;
     await this.pool.query(sql, values);
     return data;
   }
 
-  // Tìm theo ID
   async findById(id) {
     const [rows] = await this.pool.query(
       `SELECT * FROM ${this.table} WHERE id = ? LIMIT 1`,
@@ -27,7 +31,6 @@ export class BaseRepository {
     return rows[0] || null;
   }
 
-  // Tìm tất cả
   async findAll(where = {}, orderBy = "created_at DESC") {
     let sql = `SELECT * FROM ${this.table}`;
     const values = [];
@@ -48,10 +51,9 @@ export class BaseRepository {
     return rows;
   }
 
-  // Cập nhật record theo ID
   async updateById(id, data) {
     const keys = Object.keys(data);
-    const values = Object.values(data);
+    const values = Object.values(data).map(v => this.#formatValue(v));
     const setString = keys.map((key) => `${key} = ?`).join(", ");
 
     const sql = `UPDATE ${this.table} SET ${setString} WHERE id = ?`;
@@ -59,12 +61,8 @@ export class BaseRepository {
     return true;
   }
 
-  // Xóa theo ID
   async deleteById(id) {
-    await this.pool.query(
-      `DELETE FROM ${this.table} WHERE id = ?`,
-      [id]
-    );
+    await this.pool.query(`DELETE FROM ${this.table} WHERE id = ?`, [id]);
     return true;
   }
 }
