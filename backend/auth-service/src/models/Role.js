@@ -1,15 +1,18 @@
 export default class Role {
   #id;
-  #roleName;
+  #name;
+  #description;
   #createdAt;
 
   constructor(row = {}) {
     this.#id = row.id;
-    this.#roleName = row.role_name;
+    this.#name = row.name;
+    this.#description = row.description;
     this.#createdAt = row.created_at ? new Date(row.created_at) : null;
   }
 
   get id() { return this.#id; }
-  get roleName() { return this.#roleName; }
+  get name() { return this.#name; }
+  get description() { return this.#description; }
   get createdAt() { return this.#createdAt; }
 }

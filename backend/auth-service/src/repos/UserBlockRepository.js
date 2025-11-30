@@ -6,13 +6,24 @@ export class UserBlockRepository extends BaseRepository {
     super(pool, "user_blocks");
   }
 
-  async blockUser(userBlock) {
-    await this.create(userBlock);
-    return new UserBlock(userBlock);
+  async blockUser(data) {
+    const row = await this.create(data);
+    return new UserBlock(row);
   }
 
   async findByUserId(userId) {
     const rows = await this.findAll({ user_id: userId });
     return rows.map(row => new UserBlock(row));
+  }
+
+  async liftBlock(id) {
+    const now = new Date();
+    await this.updateById(id, { lifted_at: now });
+    const updated = await this.findById(id);
+    return updated ? new UserBlock(updated) : null;
+  }
+
+  async deleteBlock(id) {
+    return await this.deleteById(id);
   }
 }

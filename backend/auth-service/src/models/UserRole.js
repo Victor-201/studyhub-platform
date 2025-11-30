@@ -2,17 +2,20 @@ export default class UserRole {
   #id;
   #userId;
   #roleId;
-  #createdAt;
+  #assignedAt;
+  #revokedAt;
 
   constructor(row = {}) {
     this.#id = row.id;
     this.#userId = row.user_id;
     this.#roleId = row.role_id;
-    this.#createdAt = row.created_at ? new Date(row.created_at) : null;
+    this.#assignedAt = row.assigned_at ? new Date(row.assigned_at) : null;
+    this.#revokedAt = row.revoked_at ? new Date(row.revoked_at) : null;
   }
 
   get id() { return this.#id; }
   get userId() { return this.#userId; }
   get roleId() { return this.#roleId; }
-  get createdAt() { return this.#createdAt; }
+  get assignedAt() { return this.#assignedAt; }
+  get revokedAt() { return this.#revokedAt; }
 }

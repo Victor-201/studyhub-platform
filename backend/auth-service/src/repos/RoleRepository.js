@@ -8,14 +8,29 @@ export class RoleRepository extends BaseRepository {
 
   async findByName(name) {
     const [rows] = await this.pool.query(
-      `SELECT * FROM roles WHERE name = ? LIMIT 1`,
+      `SELECT * FROM ${this.table} WHERE name = ? LIMIT 1`,
       [name]
     );
     return rows.length ? new Role(rows[0]) : null;
   }
 
   async findAllRoles() {
-    const rows = await super.findAll();
+    const rows = await this.findAll();
     return rows.map(row => new Role(row));
+  }
+
+  async createRole(data) {
+    const row = await this.create(data);
+    return new Role(row);
+  }
+
+  async updateRole(id, updateData) {
+    await this.updateById(id, updateData);
+    const updated = await this.findById(id);
+    return updated ? new Role(updated) : null;
+  }
+
+  async deleteRole(id) {
+    return await this.deleteById(id);
   }
 }
