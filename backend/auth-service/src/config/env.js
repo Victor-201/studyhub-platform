@@ -11,7 +11,7 @@ export const env = {
   PORT: Number(process.env.PORT || 3000),
   BASE_URL: process.env.BASE_URL || "http://localhost:3000",
 
-  DB_HOST: process.env.DB_HOST || "127.0.0.1",
+  DB_HOST: required("DB_HOST"),
   DB_PORT: Number(process.env.DB_PORT || 3306),
   DB_USER: required("DB_USER"),
   DB_PASS: process.env.DB_PASS || "",
@@ -28,6 +28,8 @@ export const env = {
   REFRESH_TOKEN: required("REFRESH_TOKEN"),
   REDIRECT_URI: process.env.REDIRECT_URI || "http://localhost:3000/oauth2callback",
   GMAIL_USER: required("GMAIL_USER"),
+
+  FRONTEND_URL: required("FRONTEND_URL"),
 };
 
 export default env;
