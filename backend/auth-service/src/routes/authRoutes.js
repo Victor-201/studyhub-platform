@@ -1,24 +1,20 @@
 import express from "express";
+import { AuthController } from "../controllers/AuthController.js";
+import { verifyAccessToken } from "../middlewares/auth.js";
 
-/**
- * Auth Router
- * @param {Object} deps
- * @param {import("../controllers/AuthController.js").AuthController} deps.authController
- * @param {Function} deps.verifyAccessToken
- */
-export function createAuthRouter({ authController, verifyAccessToken }) {
+export function createAuthRouter({ authService }) {
   const router = express.Router();
+  const controller = new AuthController({ authService });
 
-  router.post("/register", authController.register.bind(authController));
-  router.post("/verify-email", authController.verifyEmail.bind(authController));
-  router.post("/login", authController.login.bind(authController));
-  router.post("/refresh", authController.refresh.bind(authController));
-  router.post("/forgot-password", authController.forgotPassword.bind(authController));
-  router.post("/reset-password", authController.resetPassword.bind(authController));
+  router.post("/register", controller.register.bind(controller));
+  router.post("/verify-email", controller.verifyEmail.bind(controller));
+  router.post("/login", controller.login.bind(controller));
+  router.post("/refresh", controller.refresh.bind(controller));
+  router.post("/forgot-password", controller.forgotPassword.bind(controller));
+  router.post("/reset-password", controller.resetPassword.bind(controller));
 
-  router.use(verifyAccessToken);
-  router.post("/change-password", authController.changePassword.bind(authController));
-  router.get("/me", authController.me.bind(authController));
+  router.post("/change-password", verifyAccessToken, controller.changePassword.bind(controller));
+  router.get("/me", verifyAccessToken, controller.me.bind(controller));
 
   return router;
 }

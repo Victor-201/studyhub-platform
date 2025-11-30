@@ -1,19 +1,18 @@
 import express from "express";
+import { UserController } from "../controllers/UserController.js";
+import { verifyAccessToken } from "../middlewares/auth.js";
 
-/**
- * @param {Object} deps
- * @param {import("../controllers/UserController.js").UserController} deps.userController
- * @param {Function} deps.verifyAccessToken
- */
-export function createUserRouter({ userController, verifyAccessToken }) {
+export function createUserRouter({ userService }) {
   const router = express.Router();
+  const controller = new UserController({ userService });
+
   router.use(verifyAccessToken);
 
-  router.get("/profile", userController.getProfile.bind(userController));
-  router.patch("/profile", userController.updateProfile.bind(userController));
-  router.get("/emails", userController.listEmails.bind(userController));
-  router.post("/emails", userController.addEmail.bind(userController));
-  router.patch("/emails/primary", userController.setPrimaryEmail.bind(userController));
+  router.get("/profile", controller.getProfile.bind(controller));
+  router.patch("/profile", controller.updateProfile.bind(controller));
+  router.get("/emails", controller.listEmails.bind(controller));
+  router.post("/emails", controller.addEmail.bind(controller));
+  router.patch("/emails/primary", controller.setPrimaryEmail.bind(controller));
 
   return router;
 }
