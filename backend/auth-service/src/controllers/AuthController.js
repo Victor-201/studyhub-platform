@@ -7,36 +7,52 @@ export class AuthController {
     this.authService = authService;
   }
 
+  /** Register a new user */
   async register(req, res) {
     try {
-      const { name, email, password } = req.body;
-      const { user, verificationToken } = await this.authService.register({ name, email, password, userAgent: req.headers['user-agent'], ip: req.ip });
+      const { userName, email, password } = req.body;
+      const { user, verificationToken } = await this.authService.register({
+        userName,
+        email,
+        password,
+        userAgent: req.headers["user-agent"],
+        ip: req.ip,
+      });
       res.status(201).json({ user, verificationToken });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
   }
 
+  /** Verify email with token */
   async verifyEmail(req, res) {
     try {
-      const { token } = req.body;
+      const token = req.query.token;
       await this.authService.verifyEmail(token);
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
   }
-
+  
+  /** Login user with email or username */
   async login(req, res) {
     try {
-      const { email, password } = req.body;
-      const { user, accessToken, refreshToken } = await this.authService.login({ email, password, userAgent: req.headers['user-agent'], ip: req.ip });
+      const { email, userName, password } = req.body;
+      const { user, accessToken, refreshToken } = await this.authService.login({
+        email,
+        userName,
+        password,
+        userAgent: req.headers["user-agent"],
+        ip: req.ip,
+      });
       res.json({ user, accessToken, refreshToken });
     } catch (err) {
       res.status(401).json({ error: err.message });
     }
   }
 
+  /** Refresh access token using refresh token */
   async refresh(req, res) {
     try {
       const { refreshToken } = req.body;
@@ -47,6 +63,7 @@ export class AuthController {
     }
   }
 
+  /** Change user password */
   async changePassword(req, res) {
     try {
       const userId = req.user.id;
@@ -58,16 +75,22 @@ export class AuthController {
     }
   }
 
+  /** Request password reset */
   async forgotPassword(req, res) {
     try {
       const { email } = req.body;
-      const token = await this.authService.forgotPassword(email, req.headers['user-agent'], req.ip);
-      res.json({ token }); // controller should email it in real app
+      const token = await this.authService.forgotPassword(
+        email,
+        req.headers["user-agent"],
+        req.ip
+      );
+      res.json({ token });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
   }
 
+  /** Reset password using token */
   async resetPassword(req, res) {
     try {
       const { token, newPassword } = req.body;
@@ -78,6 +101,7 @@ export class AuthController {
     }
   }
 
+  /** Get logged-in user info */
   async me(req, res) {
     try {
       const userId = req.user.id;

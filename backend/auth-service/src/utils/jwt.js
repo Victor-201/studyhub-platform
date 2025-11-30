@@ -1,16 +1,20 @@
-// src/utils/jwt.js
 import jwt from "jsonwebtoken";
-import { env } from "../config/env.js";
 
-export function generateAccessToken(payload) {
-  return jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: env.JWT_ACCESS_EXPIRES });
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || "access_secret";
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "refresh_secret";
+
+export function signAccessToken(payload, expiresIn = "15m") {
+  return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn });
 }
-export function verifyAccess(token) {
-  return jwt.verify(token, env.JWT_ACCESS_SECRET);
+
+export function signRefreshToken(payload, expiresIn = "7d") {
+  return jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn });
 }
-export function generateRefreshToken(payload) {
-  return jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn: `${env.REFRESH_EXPIRES_DAYS}d` });
+
+export function verifyAccessToken(token) {
+  return jwt.verify(token, ACCESS_TOKEN_SECRET);
 }
-export function verifyRefresh(token) {
-  return jwt.verify(token, env.JWT_REFRESH_SECRET);
+
+export function verifyRefreshToken(token) {
+  return jwt.verify(token, REFRESH_TOKEN_SECRET);
 }
