@@ -1,130 +1,136 @@
 import express from "express";
+import morgan from "morgan";
+import helmet from "helmet";
+import cors from "cors";
+import bodyParser from "body-parser";
 import { pool } from "./config/db.js";
-import { createRoutes } from "./routes/index.js";
-import { verifyAccessToken } from "./middlewares/auth.js";
+import { env } from "./config/env.js";
 
-// Repositories
+// Import routes
+import { createRoutes } from "./routes/index.js";
+
+// Import repositories
 import { UserRepository } from "./repos/UserRepository.js";
 import { UserEmailRepository } from "./repos/UserEmailRepository.js";
 import { SessionRepository } from "./repos/SessionRepository.js";
 import { PasswordResetRepository } from "./repos/PasswordResetRepository.js";
 import { EmailVerificationRepository } from "./repos/EmailVerificationRepository.js";
 import { AuditLogRepository } from "./repos/AuditLogRepository.js";
+import { UserRoleRepository } from "./repos/UserRoleRepository.js";
+import { RoleRepository } from "./repos/RoleRepository.js";
+import { RolePermissionRepository } from "./repos/RolePermissionRepository.js";
+import { PermissionRepository } from "./repos/PermissionRepository.js";
 import { UserBlockRepository } from "./repos/UserBlockRepository.js";
 import { UserDeletionRepository } from "./repos/UserDeletionRepository.js";
-import { RoleRepository } from "./repos/RoleRepository.js";
-import { PermissionRepository } from "./repos/PermissionRepository.js";
-import { UserRoleRepository } from "./repos/UserRoleRepository.js";
-import { OAuthAccountRepository } from "./repos/OAuthAccountRepository.js";
+import { EmailTemplateRepository } from "./repos/EmailTemplateRepository.js";
 import { OAuthProviderRepository } from "./repos/OAuthProviderRepository.js";
+import { OAuthAccountRepository } from "./repos/OAuthAccountRepository.js";
 
-// Services
+// Import services
 import { AuthService } from "./services/AuthService.js";
 import { AdminService } from "./services/AdminService.js";
 import { OAuthService } from "./services/OAuthService.js";
-import { AuditService } from "./services/AuditService.js";
 import { UserService } from "./services/UserService.js";
-
-// Controllers
-import { AuthController } from "./controllers/AuthController.js";
-import { AdminController } from "./controllers/AdminController.js";
-import { OAuthController } from "./controllers/OAuthController.js";
-import { ReportController } from "./controllers/ReportController.js";
-import { UserController } from "./controllers/UserController.js";
+import { EmailService } from "./services/EmailService.js";
 
 export function createApp() {
   const app = express();
 
-  // Built-in JSON parser
-  app.use(express.json());
+  // Middlewares
+  app.use(helmet());
+  app.use(cors());
+  app.use(morgan("dev"));
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: true }));
 
-  // --- Logger middleware ---
-  app.use((req, res, next) => {
-    const start = Date.now();
+  // Initialize Email Service
+const emailService = new EmailService({
+  user: env.GMAIL_USER,
+  clientId: env.CLIENT_ID,
+  clientSecret: env.CLIENT_SECRET,
+  redirectUri: env.REDIRECT_URI,
+  refreshToken: env.REFRESH_TOKEN,
+});
 
-    // Log request body for POST/PATCH
-    if (["POST", "PATCH"].includes(req.method) && Object.keys(req.body || {}).length > 0) {
-      console.log(`[Request Body]`, req.body);
-    }
+  // Initialize repositories
+  const userRepo = new UserRepository(pool);
+  const userEmailRepo = new UserEmailRepository(pool);
+  const sessionRepo = new SessionRepository(pool);
+  const passwordResetRepo = new PasswordResetRepository(pool);
+  const emailVerificationRepo = new EmailVerificationRepository(pool);
+  const auditRepo = new AuditLogRepository(pool);
+  const userRoleRepo = new UserRoleRepository(pool);
+  const roleRepo = new RoleRepository(pool);
+  const rolePermissionRepo = new RolePermissionRepository(pool);
+  const permissionRepo = new PermissionRepository(pool);
+  const userBlockRepo = new UserBlockRepository(pool);
+  const userDeletionRepo = new UserDeletionRepository(pool);
+  const emailTemplateRepo = new EmailTemplateRepository(pool);
+  const oAuthProviderRepo = new OAuthProviderRepository(pool);
+  const oAuthAccountRepo = new OAuthAccountRepository(pool);
 
-    res.on("finish", () => {
-      const duration = Date.now() - start;
-      console.log(
-        `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`
-      );
-    });
-
-    next();
-  });
-
-  // --- Init repositories ---
-const userRepo = new UserRepository(pool);
-const userEmailRepo = new UserEmailRepository(pool);
-const sessionRepo = new SessionRepository(pool);
-const passwordResetRepo = new PasswordResetRepository(pool);
-const emailVerificationRepo = new EmailVerificationRepository(pool);
-const auditRepo = new AuditLogRepository(pool);
-const userBlockRepo = new UserBlockRepository(pool);
-const userDeletionRepo = new UserDeletionRepository(pool);
-const roleRepo = new RoleRepository(pool);
-const permissionRepo = new PermissionRepository(pool);
-const userRoleRepo = new UserRoleRepository(pool);
-const oauthAccountRepo = new OAuthAccountRepository(pool);
-const oauthProviderRepo = new OAuthProviderRepository(pool);
-
-  // --- Init services ---
+  // Initialize services with dependencies
   const authService = new AuthService({
     userRepo,
     userEmailRepo,
     sessionRepo,
     passwordResetRepo,
     emailVerificationRepo,
-    auditRepo
+    auditRepo,
+    userRoleRepo,
+    roleRepo,
+    emailService,
   });
 
   const adminService = new AdminService({
     userRepo,
+    userRoleRepo,
     userBlockRepo,
     userDeletionRepo,
+    auditRepo,
     roleRepo,
+    rolePermissionRepo,
     permissionRepo,
-    userRoleRepo,
-    auditRepo
+    userEmailRepo,
+    emailTemplateRepo,
   });
 
   const oauthService = new OAuthService({
+    oAuthProviderRepo,
+    oAuthAccountRepo,
     userRepo,
-    oauthAccountRepo,
-    oauthProviderRepo
+    userEmailRepo,
+    sessionRepo,
+    auditRepo,
+    userRoleRepo,
+    roleRepo,
   });
-
-  const auditService = new AuditService({ auditRepo });
 
   const userService = new UserService({
     userRepo,
     userEmailRepo,
-    sessionRepo
+    auditRepo,
+    userRoleRepo,
+    roleRepo,
+    rolePermissionRepo,
+    permissionRepo,
   });
 
-  // --- Init controllers ---
-  const controllers = {
-    authController: new AuthController({ authService }),
-    adminController: new AdminController({ adminService }),
-    oauthController: new OAuthController({ oauthService }),
-    reportController: new ReportController({ auditService }),
-    userController: new UserController({ userService })
-  };
+  // Mount routers
+  app.use(
+    "/api/v1",
+    createRoutes({ authService, adminService, oauthService, userService })
+  );
 
-  // --- Mount routes ---
-  app.use("/api", createRoutes({ controllers, verifyAccessToken }));
-
-  // 404 handler
-  app.use((req, res) => res.status(404).json({ error: "Not found" }));
+  // Health check
+  app.get("/health", (req, res) => {
+    res.json({ status: "ok" });
+  });
 
   // Global error handler
   app.use((err, req, res, next) => {
-    console.error(`[Error]`, err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
   });
 
   return app;

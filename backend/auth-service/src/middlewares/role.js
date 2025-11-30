@@ -1,13 +1,18 @@
 export function requireRole(roleName) {
-  return async (req, res, next) => {
+  return (req, res, next) => {
     try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
       const userRoles = req.user.roles || [];
       if (!userRoles.includes(roleName)) {
-        return res.status(403).json({ error: "Forbidden" });
+        return res.status(403).json({ error: "Forbidden: insufficient role" });
       }
+
       next();
     } catch (err) {
-      res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 }
