@@ -1,6 +1,6 @@
 export default class EmailVerification {
   #id;
-  #userId;
+  #userEmailId;
   #tokenHash;
   #expiresAt;
   #usedAt;
@@ -10,9 +10,9 @@ export default class EmailVerification {
 
   constructor(row = {}) {
     this.#id = row.id;
-    this.#userId = row.user_id;
+    this.#userEmailId = row.user_email_id;
     this.#tokenHash = row.token_hash;
-    this.#expiresAt = new Date(row.expires_at);
+    this.#expiresAt = row.expires_at ? new Date(row.expires_at) : null;
     this.#usedAt = row.used_at ? new Date(row.used_at) : null;
     this.#ip = row.ip;
     this.#userAgent = row.user_agent;
@@ -20,7 +20,7 @@ export default class EmailVerification {
   }
 
   get id() { return this.#id; }
-  get userId() { return this.#userId; }
+  get userEmailId() { return this.#userEmailId; }
   get tokenHash() { return this.#tokenHash; }
   get expiresAt() { return this.#expiresAt; }
   get usedAt() { return this.#usedAt; }
