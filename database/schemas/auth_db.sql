@@ -164,3 +164,17 @@ CREATE TABLE email_templates (
   created_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
   updated_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
 );
+
+CREATE TABLE outbox_events (
+  id CHAR(36) PRIMARY KEY,
+  aggregate_type VARCHAR(64) NOT NULL, 
+  aggregate_id CHAR(36) NOT NULL,         
+  event_type VARCHAR(128) NOT NULL,        
+  routing_key VARCHAR(128) NOT NULL,      
+  payload JSON NOT NULL,                    
+  status ENUM('pending','published','failed') NOT NULL DEFAULT 'pending',
+  published_at DATETIME(6) NULL,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  UNIQUE KEY uq_event (id),
+  INDEX idx_status_created_at (status, created_at)
+);
