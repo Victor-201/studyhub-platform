@@ -1,36 +1,36 @@
 export default class Session {
   #id;
-  #userId;
-  #refreshTokenHash;
-  #createdAt;
-  #lastUsedAt;
-  #expiresAt;
-  #revokedAt;
+  #user_id;
+  #refresh_token_hash;
+  #created_at;
+  #last_used_at;
+  #expires_at;
+  #revoked_at;
   #ip;
-  #userAgent;
-  #deviceInfo;
+  #user_agent;
+  #device_info;
 
   constructor(row = {}) {
     this.#id = row.id;
-    this.#userId = row.user_id;
-    this.#refreshTokenHash = row.refresh_token_hash;
-    this.#createdAt = row.created_at ? new Date(row.created_at) : null;
-    this.#lastUsedAt = row.last_used_at ? new Date(row.last_used_at) : null;
-    this.#expiresAt = row.expires_at ? new Date(row.expires_at) : null;
-    this.#revokedAt = row.revoked_at ? new Date(row.revoked_at) : null;
+    this.#user_id = row.user_id;
+    this.#refresh_token_hash = row.refresh_token_hash;
+    this.#created_at = row.created_at ? new Date(row.created_at) : null;
+    this.#last_used_at = row.last_used_at ? new Date(row.last_used_at) : null;
+    this.#expires_at = row.expires_at ? new Date(row.expires_at) : null;
+    this.#revoked_at = row.revoked_at ? new Date(row.revoked_at) : null;
     this.#ip = row.ip;
-    this.#userAgent = row.user_agent;
-    this.#deviceInfo = row.device_info;
+    this.#user_agent = row.user_agent;
+    this.#device_info = row.device_info;
   }
 
   get id() { return this.#id; }
-  get userId() { return this.#userId; }
-  get refreshTokenHash() { return this.#refreshTokenHash; }
-  get createdAt() { return this.#createdAt; }
-  get lastUsedAt() { return this.#lastUsedAt; }
-  get expiresAt() { return this.#expiresAt; }
-  get revokedAt() { return this.#revokedAt; }
+  get user_id() { return this.#user_id; }
+  get refresh_token_hash() { return this.#refresh_token_hash; }
+  get created_at() { return this.#created_at; }
+  get last_used_at() { return this.#last_used_at; }
+  get expires_at() { return this.#expires_at; }
+  get revoked_at() { return this.#revoked_at; }
   get ip() { return this.#ip; }
-  get userAgent() { return this.#userAgent; }
-  get deviceInfo() { return this.#deviceInfo; }
+  get user_agent() { return this.#user_agent; }
+  get device_info() { return this.#device_info; }
 }

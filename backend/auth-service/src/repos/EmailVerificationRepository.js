@@ -6,10 +6,10 @@ export class EmailVerificationRepository extends BaseRepository {
     super(pool, "email_verifications");
   }
 
-  async findByHash(tokenHash) {
+  async findByHash(token_hash) {
     const [rows] = await this.pool.query(
       `SELECT * FROM ${this.table} WHERE token_hash = ? AND used_at IS NULL LIMIT 1`,
-      [tokenHash]
+      [token_hash]
     );
     return rows.length ? new EmailVerification(rows[0]) : null;
   }
@@ -18,17 +18,17 @@ export class EmailVerificationRepository extends BaseRepository {
     const now = new Date();
     await this.updateById(id, { used_at: now });
 
-    const updatedRow = await this.findById(id);
-    return updatedRow ? new EmailVerification(updatedRow) : null;
+    const updated = await this.findById(id);
+    return updated ? new EmailVerification(updated) : null;
   }
 
-  async findByUserEmailId(userEmailId) {
-    const rows = await this.findAll({ user_email_id: userEmailId });
+  async findByUserEmailId(user_email_id) {
+    const rows = await this.findAll({ user_email_id });
     return rows.map(row => new EmailVerification(row));
   }
 
-  async createToken(tokenData) {
-    const row = await this.create(tokenData);
+  async createToken(data) {
+    const row = await this.create(data);
     return new EmailVerification(row);
   }
 

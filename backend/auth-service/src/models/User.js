@@ -1,27 +1,27 @@
 export default class User {
   #id;
-  #userName;
-  #passwordHash;
+  #user_name;
+  #password_hash;
   #status;
-  #lastLoginAt;
-  #createdAt;
-  #updatedAt;
+  #last_login_at;
+  #created_at;
+  #updated_at;
 
   constructor(row = {}) {
     this.#id = row.id;
-    this.#userName = row.user_name;
-    this.#passwordHash = row.password_hash;
+    this.#user_name = row.user_name;
+    this.#password_hash = row.password_hash;
     this.#status = row.status;
-    this.#lastLoginAt = row.last_login_at ? new Date(row.last_login_at) : null;
-    this.#createdAt = row.created_at ? new Date(row.created_at) : null;
-    this.#updatedAt = row.updated_at ? new Date(row.updated_at) : null;
+    this.#last_login_at = row.last_login_at ? new Date(row.last_login_at) : null;
+    this.#created_at = row.created_at ? new Date(row.created_at) : null;
+    this.#updated_at = row.updated_at ? new Date(row.updated_at) : null;
   }
 
   get id() { return this.#id; }
-  get userName() { return this.#userName; }
-  get passwordHash() { return this.#passwordHash; }
+  get user_name() { return this.#user_name; }
+  get password_hash() { return this.#password_hash; }
   get status() { return this.#status; }
-  get lastLoginAt() { return this.#lastLoginAt; }
-  get createdAt() { return this.#createdAt; }
-  get updatedAt() { return this.#updatedAt; }
+  get last_login_at() { return this.#last_login_at; }
+  get created_at() { return this.#created_at; }
+  get updated_at() { return this.#updated_at; }
 }

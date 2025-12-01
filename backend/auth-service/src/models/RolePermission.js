@@ -1,12 +1,12 @@
 export default class RolePermission {
-  #roleId;
-  #permissionId;
+  #role_id;
+  #permission_id;
 
   constructor(row = {}) {
-    this.#roleId = row.role_id;
-    this.#permissionId = row.permission_id;
+    this.#role_id = row.role_id;
+    this.#permission_id = row.permission_id;
   }
 
-  get roleId() { return this.#roleId; }
-  get permissionId() { return this.#permissionId; }
+  get role_id() { return this.#role_id; }
+  get permission_id() { return this.#permission_id; }
 }

@@ -11,15 +11,15 @@ export class UserDeletionRepository extends BaseRepository {
     return new UserDeletion(row);
   }
 
-  async restore(id, restoredBy) {
+  async restore(id, restored_by) {
     const now = new Date();
-    await this.updateById(id, { restored_at: now, restored_by: restoredBy });
+    await this.updateById(id, { restored_at: now, restored_by });
     const updated = await this.findById(id);
     return updated ? new UserDeletion(updated) : null;
   }
 
-  async findByUserId(userId) {
-    const rows = await this.findAll({ user_id: userId });
+  async findByUserId(user_id) {
+    const rows = await this.findAll({ user_id });
     return rows.map(row => new UserDeletion(row));
   }
 

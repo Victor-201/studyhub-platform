@@ -24,8 +24,8 @@ export class RoleRepository extends BaseRepository {
     return new Role(row);
   }
 
-  async updateRole(id, updateData) {
-    await this.updateById(id, updateData);
+  async updateRole(id, update_data) {
+    await this.updateById(id, update_data);
     const updated = await this.findById(id);
     return updated ? new Role(updated) : null;
   }

@@ -6,8 +6,8 @@ export class EmailTemplateRepository extends BaseRepository {
     super(pool, "email_templates");
   }
 
-  async createTemplate(templateData) {
-    const row = await this.create(templateData);
+  async createTemplate(data) {
+    const row = await this.create(data);
     return new EmailTemplate(row);
   }
 
@@ -21,8 +21,8 @@ export class EmailTemplateRepository extends BaseRepository {
     return rows.map(row => new EmailTemplate(row));
   }
 
-  async updateTemplate(name, updateData) {
-    await this.updateById(name, updateData);
+  async updateTemplate(name, data) {
+    await this.updateById(name, data);
     const updated = await this.findById(name);
     return updated ? new EmailTemplate(updated) : null;
   }

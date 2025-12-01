@@ -48,16 +48,16 @@ export class AdminService {
 
   /**
    * Lock a user account
-   * @param {string} id - User ID
-   * @param {string} adminId - Admin performing the action
+   * @param {string} user_id - User ID
+   * @param {string} admin_id - Admin performing the action
    * @returns {Promise<boolean>}
    */
-  async lockUser(id, adminId) {
-    if (!id || !adminId) throw new Error("Missing parameters");
-    await this.userRepo.updateById(id, { status: "blocked" });
+  async lockUser(user_id, admin_id) {
+    if (!user_id || !admin_id) throw new Error("Missing parameters");
+    await this.userRepo.updateById(user_id, { status: "blocked" });
     await this.auditRepo.logAction({
-      actor_user_id: adminId,
-      target_user_id: id,
+      actor_user_id: admin_id,
+      target_user_id: user_id,
       action: "LOCK_USER",
       created_at: new Date(),
     });
@@ -66,16 +66,16 @@ export class AdminService {
 
   /**
    * Unlock a user account
-   * @param {string} id - User ID
-   * @param {string} adminId - Admin performing the action
+   * @param {string} user_id - User ID
+   * @param {string} admin_id - Admin performing the action
    * @returns {Promise<boolean>}
    */
-  async unlockUser(id, adminId) {
-    if (!id || !adminId) throw new Error("Missing parameters");
-    await this.userRepo.updateById(id, { status: "active" });
+  async unlockUser(user_id, admin_id) {
+    if (!user_id || !admin_id) throw new Error("Missing parameters");
+    await this.userRepo.updateById(user_id, { status: "active" });
     await this.auditRepo.logAction({
-      actor_user_id: adminId,
-      target_user_id: id,
+      actor_user_id: admin_id,
+      target_user_id: user_id,
       action: "UNLOCK_USER",
       created_at: new Date(),
     });
@@ -84,24 +84,24 @@ export class AdminService {
 
   /**
    * Block a user
-   * @param {string} id - User ID
+   * @param {string} user_id - User ID
    * @param {string} reason - Reason for blocking
-   * @param {string} adminId - Admin performing the action
+   * @param {string} admin_id - Admin performing the action
    * @returns {Promise<boolean>}
    */
-  async blockUser(id, reason, adminId) {
-    if (!id || !reason || !adminId) throw new Error("Missing parameters");
+  async blockUser(user_id, reason, admin_id) {
+    if (!user_id || !reason || !admin_id) throw new Error("Missing parameters");
     await this.userBlockRepo.blockUser({
       id: crypto.randomUUID(),
-      user_id: id,
-      blocked_by: adminId,
+      user_id,
+      blocked_by: admin_id,
       reason,
       created_at: new Date(),
       is_permanent: false,
     });
     await this.auditRepo.logAction({
-      actor_user_id: adminId,
-      target_user_id: id,
+      actor_user_id: admin_id,
+      target_user_id: user_id,
       action: "BLOCK_USER",
       created_at: new Date(),
     });
@@ -110,24 +110,24 @@ export class AdminService {
 
   /**
    * Soft-delete a user
-   * @param {string} id - User ID
-   * @param {string} adminId - Admin performing the action
+   * @param {string} user_id - User ID
+   * @param {string} admin_id - Admin performing the action
    * @param {string} reason - Reason for deletion
    * @returns {Promise<boolean>}
    */
-  async softDelete(id, adminId, reason) {
-    if (!id || !adminId || !reason) throw new Error("Missing parameters");
+  async softDelete(user_id, admin_id, reason) {
+    if (!user_id || !admin_id || !reason) throw new Error("Missing parameters");
     await this.userDeletionRepo.softDelete({
       id: crypto.randomUUID(),
-      user_id: id,
-      deleted_by: adminId,
+      user_id,
+      deleted_by: admin_id,
       reason,
       created_at: new Date(),
     });
-    await this.userRepo.updateById(id, { status: "deleted" });
+    await this.userRepo.updateById(user_id, { status: "deleted" });
     await this.auditRepo.logAction({
-      actor_user_id: adminId,
-      target_user_id: id,
+      actor_user_id: admin_id,
+      target_user_id: user_id,
       action: "SOFT_DELETE_USER",
       created_at: new Date(),
     });
@@ -136,23 +136,23 @@ export class AdminService {
 
   /**
    * Restore a soft-deleted user
-   * @param {string} id - User ID
-   * @param {string} adminId - Admin performing the action
+   * @param {string} user_id - User ID
+   * @param {string} admin_id - Admin performing the action
    * @returns {Promise<boolean>}
    */
-  async restoreUser(id, adminId) {
-    if (!id || !adminId) throw new Error("Missing parameters");
-    const deletions = await this.userDeletionRepo.findByUserId(id);
+  async restoreUser(user_id, admin_id) {
+    if (!user_id || !admin_id) throw new Error("Missing parameters");
+    const deletions = await this.userDeletionRepo.findByUserId(user_id);
     for (const del of deletions) {
       await this.userDeletionRepo.updateById(del.id, {
         restored_at: new Date(),
-        restored_by: adminId,
+        restored_by: admin_id,
       });
     }
-    await this.userRepo.updateById(id, { status: "active" });
+    await this.userRepo.updateById(user_id, { status: "active" });
     await this.auditRepo.logAction({
-      actor_user_id: adminId,
-      target_user_id: id,
+      actor_user_id: admin_id,
+      target_user_id: user_id,
       action: "RESTORE_USER",
       created_at: new Date(),
     });
@@ -161,24 +161,24 @@ export class AdminService {
 
   /**
    * Update a user's role
-   * @param {string} userId - User ID
-   * @param {string} roleName - Role name
-   * @param {string} adminId - Admin performing the action
+   * @param {string} user_id - User ID
+   * @param {string} role_name - Role name
+   * @param {string} admin_id - Admin performing the action
    * @returns {Promise<boolean>}
    */
-  async updateRole(userId, roleName, adminId) {
-    if (!userId || !roleName || !adminId) throw new Error("Missing parameters");
-    const role = await this.roleRepo.findByName(roleName);
+  async updateRole(user_id, role_name, admin_id) {
+    if (!user_id || !role_name || !admin_id) throw new Error("Missing parameters");
+    const role = await this.roleRepo.findByName(role_name);
     if (!role) throw new Error("Role not found");
     await this.userRoleRepo.assignRole({
       id: crypto.randomUUID(),
-      user_id: userId,
+      user_id,
       role_id: role.id,
       assigned_at: new Date(),
     });
     await this.auditRepo.logAction({
-      actor_user_id: adminId,
-      target_user_id: userId,
+      actor_user_id: admin_id,
+      target_user_id: user_id,
       action: "UPDATE_ROLE",
       created_at: new Date(),
     });
@@ -187,14 +187,14 @@ export class AdminService {
 
   /**
    * Add permission to a role
-   * @param {string} roleName - Role name
-   * @param {string} permissionName - Permission name
+   * @param {string} role_name - Role name
+   * @param {string} permission_name - Permission name
    * @returns {Promise<boolean>}
    */
-  async addPermissionToRole(roleName, permissionName) {
-    if (!roleName || !permissionName) throw new Error("Missing parameters");
-    const role = await this.roleRepo.findByName(roleName);
-    const permission = await this.permissionRepo.findByName(permissionName);
+  async addPermissionToRole(role_name, permission_name) {
+    if (!role_name || !permission_name) throw new Error("Missing parameters");
+    const role = await this.roleRepo.findByName(role_name);
+    const permission = await this.permissionRepo.findByName(permission_name);
     if (!role || !permission) throw new Error("Role or Permission not found");
     await this.rolePermissionRepo.assignPermission({
       id: crypto.randomUUID(),
@@ -215,22 +215,22 @@ export class AdminService {
 
   /**
    * Get audit logs by actor user ID
-   * @param {string} actorUserId
+   * @param {string} actor_user_id
    * @returns {Promise<Array>}
    */
-  async getAuditLogsByActor(actorUserId) {
-    if (!actorUserId) throw new Error("actorUserId required");
-    return this.auditRepo.findByActor(actorUserId);
+  async getAuditLogsByActor(actor_user_id) {
+    if (!actor_user_id) throw new Error("actorUserId required");
+    return this.auditRepo.findByActor(actor_user_id);
   }
 
   /**
    * Get audit logs by target user ID
-   * @param {string} targetUserId
+   * @param {string} target_user_id
    * @returns {Promise<Array>}
    */
-  async getAuditLogsByTarget(targetUserId) {
-    if (!targetUserId) throw new Error("targetUserId required");
-    return this.auditRepo.findByTarget(targetUserId);
+  async getAuditLogsByTarget(target_user_id) {
+    if (!target_user_id) throw new Error("targetUserId required");
+    return this.auditRepo.findByTarget(target_user_id);
   }
 
   /**

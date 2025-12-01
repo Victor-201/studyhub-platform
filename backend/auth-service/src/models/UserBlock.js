@@ -1,30 +1,30 @@
 export default class UserBlock {
   #id;
-  #userId;
-  #blockedBy;
+  #user_id;
+  #blocked_by;
   #reason;
-  #blockedUntil;
-  #isPermanent;
-  #liftedAt;
-  #createdAt;
+  #blocked_until;
+  #is_permanent;
+  #lifted_at;
+  #created_at;
 
   constructor(row = {}) {
     this.#id = row.id;
-    this.#userId = row.user_id;
-    this.#blockedBy = row.blocked_by;
+    this.#user_id = row.user_id;
+    this.#blocked_by = row.blocked_by;
     this.#reason = row.reason;
-    this.#blockedUntil = row.blocked_until ? new Date(row.blocked_until) : null;
-    this.#isPermanent = row.is_permanent;
-    this.#liftedAt = row.lifted_at ? new Date(row.lifted_at) : null;
-    this.#createdAt = row.created_at ? new Date(row.created_at) : null;
+    this.#blocked_until = row.blocked_until ? new Date(row.blocked_until) : null;
+    this.#is_permanent = row.is_permanent;
+    this.#lifted_at = row.lifted_at ? new Date(row.lifted_at) : null;
+    this.#created_at = row.created_at ? new Date(row.created_at) : null;
   }
 
   get id() { return this.#id; }
-  get userId() { return this.#userId; }
-  get blockedBy() { return this.#blockedBy; }
+  get user_id() { return this.#user_id; }
+  get blocked_by() { return this.#blocked_by; }
   get reason() { return this.#reason; }
-  get blockedUntil() { return this.#blockedUntil; }
-  get isPermanent() { return this.#isPermanent; }
-  get liftedAt() { return this.#liftedAt; }
-  get createdAt() { return this.#createdAt; }
+  get blocked_until() { return this.#blocked_until; }
+  get is_permanent() { return this.#is_permanent; }
+  get lifted_at() { return this.#lifted_at; }
+  get created_at() { return this.#created_at; }
 }

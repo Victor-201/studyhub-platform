@@ -24,8 +24,8 @@ export class PermissionRepository extends BaseRepository {
     return new Permission(row);
   }
 
-  async updatePermission(id, updateData) {
-    await this.updateById(id, updateData);
+  async updatePermission(id, update_data) {
+    await this.updateById(id, update_data);
     const updated = await this.findById(id);
     return updated ? new Permission(updated) : null;
   }

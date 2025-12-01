@@ -20,9 +20,9 @@ export class AdminController {
   /** Lock a user */
   async lockUser(req, res) {
     try {
-      const { userId } = req.params;
-      const adminId = req.user.id;
-      await this.adminService.lockUser(userId, adminId);
+      const { user_id } = req.params;
+      const admin_id = req.user.id;
+      await this.adminService.lockUser(user_id, admin_id);
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -32,9 +32,9 @@ export class AdminController {
   /** Unlock a user */
   async unlockUser(req, res) {
     try {
-      const { userId } = req.params;
-      const adminId = req.user.id;
-      await this.adminService.unlockUser(userId, adminId);
+      const { user_id } = req.params;
+      const admin_id = req.user.id;
+      await this.adminService.unlockUser(user_id, admin_id);
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -44,10 +44,10 @@ export class AdminController {
   /** Block a user permanently or temporarily */
   async blockUser(req, res) {
     try {
-      const { userId } = req.params;
+      const { user_id } = req.params;
       const { reason } = req.body;
-      const adminId = req.user.id;
-      await this.adminService.blockUser(userId, reason, adminId);
+      const admin_id = req.user.id;
+      await this.adminService.blockUser(user_id, reason, admin_id);
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -57,10 +57,10 @@ export class AdminController {
   /** Soft delete a user */
   async softDeleteUser(req, res) {
     try {
-      const { userId } = req.params;
+      const { user_id } = req.params;
       const { reason } = req.body;
-      const adminId = req.user.id;
-      await this.adminService.softDelete(userId, adminId, reason);
+      const admin_id = req.user.id;
+      await this.adminService.softDelete(user_id, admin_id, reason);
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -70,9 +70,9 @@ export class AdminController {
   /** Restore a soft-deleted user */
   async restoreUser(req, res) {
     try {
-      const { userId } = req.params;
-      const adminId = req.user.id;
-      await this.adminService.restoreUser(userId, adminId);
+      const { user_id } = req.params;
+      const admin_id = req.user.id;
+      await this.adminService.restoreUser(user_id, admin_id);
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -82,10 +82,10 @@ export class AdminController {
   /** Update a user's role */
   async updateRole(req, res) {
     try {
-      const { userId } = req.params;
-      const { roleName } = req.body;
-      const adminId = req.user.id;
-      await this.adminService.updateRole(userId, roleName, adminId);
+      const { user_id } = req.params;
+      const { role_name } = req.body;
+      const admin_id = req.user.id;
+      await this.adminService.updateRole(user_id, role_name, admin_id);
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -105,8 +105,8 @@ export class AdminController {
   /** Get audit logs filtered by actor */
   async getAuditLogsByActor(req, res) {
     try {
-      const { actorUserId } = req.params;
-      const logs = await this.adminService.getAuditLogsByActor(actorUserId);
+      const { actor_user_id } = req.params;
+      const logs = await this.adminService.getAuditLogsByActor(actor_user_id);
       res.json(logs);
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -116,8 +116,8 @@ export class AdminController {
   /** Get audit logs filtered by target */
   async getAuditLogsByTarget(req, res) {
     try {
-      const { targetUserId } = req.params;
-      const logs = await this.adminService.getAuditLogsByTarget(targetUserId);
+      const { target_user_id } = req.params;
+      const logs = await this.adminService.getAuditLogsByTarget(target_user_id);
       res.json(logs);
     } catch (err) {
       res.status(400).json({ error: err.message });

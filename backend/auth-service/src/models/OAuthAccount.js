@@ -1,24 +1,24 @@
 export default class OAuthAccount {
   #id;
-  #userId;
+  #user_id;
   #provider;
-  #providerUserId;
-  #providerData;
-  #createdAt;
+  #provider_user_id;
+  #provider_data;
+  #created_at;
 
   constructor(row = {}) {
     this.#id = row.id;
-    this.#userId = row.user_id;
+    this.#user_id = row.user_id;
     this.#provider = row.provider;
-    this.#providerUserId = row.provider_user_id;
-    this.#providerData = row.provider_data;
-    this.#createdAt = row.created_at ? new Date(row.created_at) : null;
+    this.#provider_user_id = row.provider_user_id;
+    this.#provider_data = row.provider_data;
+    this.#created_at = row.created_at ? new Date(row.created_at) : null;
   }
 
   get id() { return this.#id; }
-  get userId() { return this.#userId; }
+  get user_id() { return this.#user_id; }
   get provider() { return this.#provider; }
-  get providerUserId() { return this.#providerUserId; }
-  get providerData() { return this.#providerData; }
-  get createdAt() { return this.#createdAt; }
+  get provider_user_id() { return this.#provider_user_id; }
+  get provider_data() { return this.#provider_data; }
+  get created_at() { return this.#created_at; }
 }

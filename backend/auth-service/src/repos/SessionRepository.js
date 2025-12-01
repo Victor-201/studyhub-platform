@@ -16,15 +16,15 @@ export class SessionRepository extends BaseRepository {
     return row ? new Session(row) : null;
   }
 
-  async findByUserId(userId) {
-    const rows = await this.findAll({ user_id: userId });
+  async findByUserId(user_id) {
+    const rows = await this.findAll({ user_id });
     return rows.map(row => new Session(row));
   }
 
-  async findByRefreshTokenHash(refreshTokenHash) {
+  async findByRefreshTokenHash(refresh_token_hash) {
     const [rows] = await this.pool.query(
       `SELECT * FROM ${this.table} WHERE refresh_token_hash = ? LIMIT 1`,
-      [refreshTokenHash]
+      [refresh_token_hash]
     );
     return rows.length ? new Session(rows[0]) : null;
   }

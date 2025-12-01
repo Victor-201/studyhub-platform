@@ -11,8 +11,8 @@ export class UserBlockRepository extends BaseRepository {
     return new UserBlock(row);
   }
 
-  async findByUserId(userId) {
-    const rows = await this.findAll({ user_id: userId });
+  async findByUserId(user_id) {
+    const rows = await this.findAll({ user_id });
     return rows.map(row => new UserBlock(row));
   }
 

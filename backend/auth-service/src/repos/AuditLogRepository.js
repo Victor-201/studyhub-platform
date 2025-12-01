@@ -12,17 +12,17 @@ export class AuditLogRepository extends BaseRepository {
       meta: logData.meta ? JSON.stringify(logData.meta) : null
     };
 
-    const inserted = await this.create(payload);
-    return new AuditLog(inserted);
+    const row = await this.create(payload);
+    return new AuditLog(row);
   }
 
-  async findByActor(actorUserId) {
-    const rows = await this.findAll({ actor_user_id: actorUserId });
+  async findByActor(actor_user_id) {
+    const rows = await this.findAll({ actor_user_id });
     return rows.map(row => new AuditLog(row));
   }
 
-  async findByTarget(targetUserId) {
-    const rows = await this.findAll({ target_user_id: targetUserId });
+  async findByTarget(target_user_id) {
+    const rows = await this.findAll({ target_user_id });
     return rows.map(row => new AuditLog(row));
   }
 }

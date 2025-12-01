@@ -8,10 +8,9 @@ export class UserController {
   }
 
   /** Get logged-in user's profile */
-  async getProfile(req, res) {
+  async getProfile({ user }, res) {
     try {
-      const userId = req.user.id;
-      const profile = await this.userService.getProfile(userId);
+      const profile = await this.userService.getProfile(user.id);
       res.json({ user: profile });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -19,11 +18,9 @@ export class UserController {
   }
 
   /** Update logged-in user's profile */
-  async updateProfile(req, res) {
+  async updateProfile({ user, body }, res) {
     try {
-      const userId = req.user.id;
-      const fields = req.body;
-      const updated = await this.userService.updateProfile(userId, fields);
+      const updated = await this.userService.updateProfile(user.id, body);
       res.json({ user: updated });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -31,10 +28,9 @@ export class UserController {
   }
 
   /** List all emails of logged-in user */
-  async listEmails(req, res) {
+  async listEmails({ user }, res) {
     try {
-      const userId = req.user.id;
-      const emails = await this.userService.listEmails(userId);
+      const emails = await this.userService.listEmails(user.id);
       res.json({ emails });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -42,11 +38,9 @@ export class UserController {
   }
 
   /** Add a secondary email */
-  async addEmail(req, res) {
+  async addEmail({ user, body }, res) {
     try {
-      const userId = req.user.id;
-      const { email } = req.body;
-      const row = await this.userService.addEmail(userId, email);
+      const row = await this.userService.addEmail(user.id, body.email);
       res.status(201).json({ email: row });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -54,11 +48,9 @@ export class UserController {
   }
 
   /** Set an email as primary */
-  async setPrimaryEmail(req, res) {
+  async setPrimaryEmail({ user, body }, res) {
     try {
-      const userId = req.user.id;
-      const { emailId } = req.body;
-      const updated = await this.userService.setPrimaryEmail(userId, emailId);
+      const updated = await this.userService.setPrimaryEmail(user.id, body.emailId);
       res.json({ email: updated });
     } catch (err) {
       res.status(400).json({ error: err.message });

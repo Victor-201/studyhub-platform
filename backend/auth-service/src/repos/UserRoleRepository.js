@@ -6,13 +6,13 @@ export class UserRoleRepository extends BaseRepository {
     super(pool, "user_roles");
   }
 
-  async findByUserId(userId) {
-    const rows = await this.findAll({ user_id: userId });
+  async findByUserId(user_id) {
+    const rows = await this.findAll({ user_id });
     return rows.map(row => new UserRole(row));
   }
 
-  async findByRoleId(roleId) {
-    const rows = await this.findAll({ role_id: roleId });
+  async findByRoleId(role_id) {
+    const rows = await this.findAll({ role_id });
     return rows.map(row => new UserRole(row));
   }
 

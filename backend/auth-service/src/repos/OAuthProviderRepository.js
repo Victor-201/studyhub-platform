@@ -24,8 +24,8 @@ export class OAuthProviderRepository extends BaseRepository {
     return rows.map(row => new OAuthProvider(row));
   }
 
-  async updateProvider(id, updateData) {
-    await this.updateById(id, updateData);
+  async updateProvider(id, data) {
+    await this.updateById(id, data);
     const updated = await this.findById(id);
     return updated ? new OAuthProvider(updated) : null;
   }

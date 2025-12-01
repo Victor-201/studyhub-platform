@@ -26,9 +26,9 @@ export class UserService {
    * @param {string} userId
    * @returns {Promise<Object|null>}
    */
-  async getProfile(userId) {
-    if (!userId) throw new Error("userId required");
-    return this.userRepo.findById(userId);
+  async getProfile(user_id) {
+    if (!user_id) throw new Error("userId required");
+    return this.userRepo.findById(user_id);
   }
 
   /**
@@ -37,17 +37,17 @@ export class UserService {
    * @param {Object} fields
    * @returns {Promise<Object>} updated user
    */
-  async updateProfile(userId, fields) {
-    if (!userId) throw new Error("userId required");
+  async updateProfile(user_id, fields) {
+    if (!user_id) throw new Error("userId required");
     const allowed = ["userName", "bio", "avatarUrl"];
     const payload = {};
     for (const key of allowed) if (key in fields) payload[key] = fields[key];
 
-    await this.userRepo.updateById(userId, payload);
-    const updated = await this.userRepo.findById(userId);
+    await this.userRepo.updateById(user_id, payload);
+    const updated_user = await this.userRepo.findById(user_id);
 
-    await this.auditRepo.logAction({ actor_user_id: userId, action: "UPDATE_PROFILE", target_user_id: userId, created_at: new Date() });
-    return updated;
+    await this.auditRepo.logAction({ actor_user_id: user_id, action: "UPDATE_PROFILE", target_user_id: user_id, created_at: new Date() });
+    return updated_user;
   }
 
   /**
@@ -55,9 +55,9 @@ export class UserService {
    * @param {string} userId
    * @returns {Promise<Array>}
    */
-  async listEmails(userId) {
-    if (!userId) throw new Error("userId required");
-    return this.userEmailRepo.getUserEmails(userId);
+  async listEmails(user_id) {
+    if (!user_id) throw new Error("userId required");
+    return this.userEmailRepo.getUserEmails(user_id);
   }
 
   /**
@@ -66,23 +66,23 @@ export class UserService {
    * @param {string} email
    * @returns {Promise<Object>} created email record
    */
-  async addEmail(userId, email) {
-    if (!userId || !email) throw new Error("Missing parameters");
+  async addEmail(user_id, email) {
+    if (!user_id || !email) throw new Error("Missing parameters");
 
-    const existing = await this.userEmailRepo.findByEmail(email);
-    if (existing) throw new Error("Email already in use");
+    const existing_email = await this.userEmailRepo.findByEmail(email);
+    if (existing_email) throw new Error("Email already in use");
 
-    const createdEmail = await this.userEmailRepo.create({
+    const created_email = await this.userEmailRepo.create({
       id: uuidv4(),
-      user_id: userId,
+      user_id,
       email,
       type: "secondary",
       is_verified: 0,
       created_at: new Date(),
     });
 
-    await this.auditRepo.logAction({ actor_user_id: userId, action: "ADD_EMAIL", target_user_id: userId, created_at: new Date() });
-    return createdEmail;
+    await this.auditRepo.logAction({ actor_user_id: user_id, action: "ADD_EMAIL", target_user_id: user_id, created_at: new Date() });
+    return created_email;
   }
 
   /**
@@ -91,12 +91,12 @@ export class UserService {
    * @param {string} emailId
    * @returns {Promise<Object>} updated email
    */
-  async setPrimaryEmail(userId, emailId) {
-    if (!userId || !emailId) throw new Error("Missing parameters");
+  async setPrimaryEmail(user_id, email_id) {
+    if (!user_id || !email_id) throw new Error("Missing parameters");
 
-    const updated = await this.userEmailRepo.markPrimary(emailId, userId);
-    await this.auditRepo.logAction({ actor_user_id: userId, action: "SET_PRIMARY_EMAIL", target_user_id: userId, created_at: new Date() });
-    return updated;
+    const updated_email = await this.userEmailRepo.markPrimary(email_id, user_id);
+    await this.auditRepo.logAction({ actor_user_id: user_id, action: "SET_PRIMARY_EMAIL", target_user_id: user_id, created_at: new Date() });
+    return updated_email;
   }
 
   /**
@@ -104,19 +104,19 @@ export class UserService {
    * @param {string} userId
    * @returns {Promise<Array>} Array of roles with permissions
    */
-  async listRolesAndPermissions(userId) {
-    if (!userId) throw new Error("userId required");
+  async listRolesAndPermissions(user_id) {
+    if (!user_id) throw new Error("userId required");
 
-    const userRoles = await this.userRoleRepo.findByUserId(userId);
+    const user_roles = await this.userRoleRepo.findByUserId(user_id);
     const result = [];
 
-    for (const ur of userRoles) {
+    for (const ur of user_roles) {
       const role = await this.roleRepo.findById(ur.role_id);
       if (!role) continue;
 
-      const rolePerms = await this.rolePermissionRepo.findByRoleId(role.id);
+      const role_perms = await this.rolePermissionRepo.findByRoleId(role.id);
       const permissions = [];
-      for (const rp of rolePerms) {
+      for (const rp of role_perms) {
         const perm = await this.permissionRepo.findById(rp.permission_id);
         if (perm) permissions.push(perm.name);
       }

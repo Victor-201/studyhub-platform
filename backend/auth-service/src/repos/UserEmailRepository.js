@@ -14,15 +14,15 @@ export class UserEmailRepository extends BaseRepository {
     return rows.length ? new UserEmail(rows[0]) : null;
   }
 
-  async getUserEmails(userId) {
-    const rows = await this.findAll({ user_id: userId }, "created_at ASC");
+  async getUserEmails(user_id) {
+    const rows = await this.findAll({ user_id }, "created_at ASC");
     return rows.map(row => new UserEmail(row));
   }
 
-  async markPrimary(id, userId) {
+  async markPrimary(id, user_id) {
     await this.pool.query(
       `UPDATE ${this.table} SET type = 'secondary' WHERE user_id = ?`,
-      [userId]
+      [user_id]
     );
     await this.updateById(id, { type: 'primary' });
     const updatedRow = await this.findById(id);

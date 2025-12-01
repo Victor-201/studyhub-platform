@@ -8,26 +8,26 @@ export class AuthController {
   }
 
   /** Register a new user */
-  async register(req, res) {
+  async register({ body, headers, ip }, res) {
     try {
-      const { userName, email, password } = req.body;
-      const { user, verificationToken } = await this.authService.register({
-        userName,
+      const { user_name, email, password } = body;
+      const { user, verification_token } = await this.authService.register({
+        user_name,
         email,
         password,
-        userAgent: req.headers["user-agent"],
-        ip: req.ip,
+        user_agent: headers["user-agent"],
+        ip,
       });
-      res.status(201).json({ user, verificationToken });
+      res.status(201).json({ user, verificationToken: verification_token });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
   }
 
   /** Verify email with token */
-  async verifyEmail(req, res) {
+  async verifyEmail({ query }, res) {
     try {
-      const token = req.query.token;
+      const token = query.token;
       await this.authService.verifyEmail(token);
       res.json({ success: true });
     } catch (err) {
@@ -36,27 +36,27 @@ export class AuthController {
   }
   
   /** Login user with email or username */
-  async login(req, res) {
+  async login({ body, headers, ip }, res) {
     try {
-      const { email, userName, password } = req.body;
-      const { user, accessToken, refreshToken } = await this.authService.login({
+      const { email, user_name, password } = body;
+      const { user, access_token, refresh_token } = await this.authService.login({
         email,
-        userName,
+        user_name,
         password,
-        userAgent: req.headers["user-agent"],
-        ip: req.ip,
+        user_agent: headers["user-agent"],
+        ip,
       });
-      res.json({ user, accessToken, refreshToken });
+      res.json({ user, accessToken: access_token, refreshToken: refresh_token });
     } catch (err) {
       res.status(401).json({ error: err.message });
     }
   }
 
   /** Refresh access token using refresh token */
-  async refresh(req, res) {
+  async refresh({ body }, res) {
     try {
-      const { refreshToken } = req.body;
-      const data = await this.authService.refreshToken(refreshToken);
+      const { refresh_token } = body;
+      const data = await this.authService.refreshToken(refresh_token);
       res.json(data);
     } catch (err) {
       res.status(401).json({ error: err.message });
@@ -64,11 +64,10 @@ export class AuthController {
   }
 
   /** Change user password */
-  async changePassword(req, res) {
+  async changePassword({ user, body }, res) {
     try {
-      const userId = req.user.id;
-      const { oldPassword, newPassword } = req.body;
-      await this.authService.changePassword(userId, oldPassword, newPassword);
+      const { old_password, new_password } = body;
+      await this.authService.changePassword(user.id, old_password, new_password);
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -76,13 +75,13 @@ export class AuthController {
   }
 
   /** Request password reset */
-  async forgotPassword(req, res) {
+  async forgotPassword({ body, headers, ip }, res) {
     try {
-      const { email } = req.body;
+      const { email } = body;
       const token = await this.authService.forgotPassword(
         email,
-        req.headers["user-agent"],
-        req.ip
+        headers["user-agent"],
+        ip
       );
       res.json({ token });
     } catch (err) {
@@ -91,10 +90,10 @@ export class AuthController {
   }
 
   /** Reset password using token */
-  async resetPassword(req, res) {
+  async resetPassword({ body }, res) {
     try {
-      const { token, newPassword } = req.body;
-      await this.authService.resetPassword(token, newPassword);
+      const { token, new_password } = body;
+      await this.authService.resetPassword(token, new_password);
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -102,11 +101,10 @@ export class AuthController {
   }
 
   /** Get logged-in user info */
-  async me(req, res) {
+  async me({ user }, res) {
     try {
-      const userId = req.user.id;
-      const user = await this.authService.getMe(userId);
-      res.json({ user });
+      const currentUser = await this.authService.getMe(user.id);
+      res.json({ user: currentUser });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }

@@ -15,14 +15,14 @@ export class OAuthController {
    */
   async login(req, res) {
     try {
-      const { providerName, providerUser } = req.body;
-      const user = await this.oauthService.login(providerName, providerUser);
+      const { provider_name, provider_user } = req.body;
+      const user = await this.oauthService.login(provider_name, provider_user);
 
       // Generate JWT for OAuth users
-      const accessToken = require("../utils/jwt.js").signAccessToken({ id: user.id, name: user.user_name || user.name });
-      const refreshToken = require("../utils/jwt.js").signRefreshToken({ id: user.id });
+      const access_token = require("../utils/jwt.js").signAccessToken({ id: user.id, name: user.user_name || user.name });
+      const refresh_token = require("../utils/jwt.js").signRefreshToken({ id: user.id });
 
-      res.json({ user, accessToken, refreshToken });
+      res.json({ user, accessToken: access_token, refreshToken: refresh_token });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
