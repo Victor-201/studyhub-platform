@@ -24,4 +24,16 @@ export default class UserDeletion {
   get created_at() { return this.#created_at; }
   get restored_at() { return this.#restored_at; }
   get restored_by() { return this.#restored_by; }
+
+  toJSON() {
+    return {
+      id: this.#id,
+      user_id: this.#user_id,
+      deleted_by: this.#deleted_by,
+      reason: this.#reason,
+      created_at: this.#created_at,
+      restored_at: this.#restored_at,
+      restored_by: this.#restored_by,
+    };
+  }
 }

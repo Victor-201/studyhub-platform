@@ -9,4 +9,11 @@ export default class RolePermission {
 
   get role_id() { return this.#role_id; }
   get permission_id() { return this.#permission_id; }
+
+  toJSON() {
+    return {
+      role_id: this.#role_id,
+      permission_id: this.#permission_id,
+    };
+  }
 }

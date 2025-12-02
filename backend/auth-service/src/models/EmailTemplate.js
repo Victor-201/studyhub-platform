@@ -18,4 +18,14 @@ export default class EmailTemplate {
   get body_template() { return this.#body_template; }
   get created_at() { return this.#created_at; }
   get updated_at() { return this.#updated_at; }
+
+    toJSON() {
+    return {  
+      name: this.#name,
+      subject_template: this.#subject_template,
+      body_template: this.#body_template,
+      created_at: this.#created_at,
+      updated_at: this.#updated_at,
+    };
+  }
 }

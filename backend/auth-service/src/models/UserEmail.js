@@ -24,4 +24,16 @@ export default class UserEmail {
   get is_verified() { return this.#is_verified; }
   get created_at() { return this.#created_at; }
   get updated_at() { return this.#updated_at; }
+
+  toJSON() {
+    return {
+      id: this.#id,
+      user_id: this.#user_id,
+      email: this.#email,
+      type: this.#type,
+      is_verified: this.#is_verified,
+      created_at: this.#created_at,
+      updated_at: this.#updated_at,
+    };
+  }
 }

@@ -27,4 +27,17 @@ export default class PasswordReset {
   get ip() { return this.#ip; }
   get user_agent() { return this.#user_agent; }
   get created_at() { return this.#created_at; }
+
+  toJSON() {
+    return {
+      id: this.#id,
+      user_id: this.#user_id,
+      token_hash: this.#token_hash,
+      expires_at: this.#expires_at,
+      used_at: this.#used_at,
+      ip: this.#ip,
+      user_agent: this.#user_agent,
+      created_at: this.#created_at,
+    };
+  }
 }

@@ -33,4 +33,19 @@ export default class AuditLog {
   get ip() { return this.#ip; }
   get user_agent() { return this.#user_agent; }
   get created_at() { return this.#created_at; }
+
+  toJSON() {
+    return {
+      id: this.#id,
+      actor_user_id: this.#actor_user_id,
+      target_user_id: this.#target_user_id,
+      action: this.#action,   
+      resource_type: this.#resource_type,
+      resource_id: this.#resource_id,
+      meta: this.#meta,
+      ip: this.#ip,
+      user_agent: this.#user_agent,
+      created_at: this.#created_at,
+    };
+  }
 }

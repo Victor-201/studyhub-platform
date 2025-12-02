@@ -18,4 +18,14 @@ export default class UserRole {
   get role_id() { return this.#role_id; }
   get assigned_at() { return this.#assigned_at; }
   get revoked_at() { return this.#revoked_at; }
+
+  toJSON() {
+    return {
+      id: this.#id,
+      user_id: this.#user_id,
+      role_id: this.#role_id,
+      assigned_at: this.#assigned_at,
+      revoked_at: this.#revoked_at,
+    };
+  }
 }

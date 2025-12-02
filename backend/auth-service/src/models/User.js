@@ -24,4 +24,16 @@ export default class User {
   get last_login_at() { return this.#last_login_at; }
   get created_at() { return this.#created_at; }
   get updated_at() { return this.#updated_at; }
+
+  toJSON() {
+    return {
+      id: this.#id,
+      user_name: this.#user_name,
+      password_hash: this.#password_hash,
+      status: this.#status,
+      last_login_at: this.#last_login_at,
+      created_at: this.#created_at,
+      updated_at: this.#updated_at,
+    };
+  }
 }

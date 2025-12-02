@@ -33,4 +33,19 @@ export default class Session {
   get ip() { return this.#ip; }
   get user_agent() { return this.#user_agent; }
   get device_info() { return this.#device_info; }
+
+  toJSON() {
+    return {
+      id: this.#id,
+      user_id: this.#user_id,
+      refresh_token_hash: this.#refresh_token_hash,
+      created_at: this.#created_at,
+      last_used_at: this.#last_used_at,
+      expires_at: this.#expires_at,
+      revoked_at: this.#revoked_at,
+      ip: this.#ip,
+      user_agent: this.#user_agent,
+      device_info: this.#device_info,
+    };
+  }
 }

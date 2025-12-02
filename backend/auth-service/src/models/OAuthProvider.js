@@ -18,4 +18,14 @@ export default class OAuthProvider {
   get client_id() { return this.#client_id; }
   get client_secret() { return this.#client_secret; }
   get created_at() { return this.#created_at; }
+
+  toJSON() {
+    return {
+      id: this.#id,
+      name: this.#name,
+      client_id: this.#client_id,
+      client_secret: this.#client_secret,
+      created_at: this.#created_at,
+    };
+  }
 }

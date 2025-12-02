@@ -27,4 +27,17 @@ export default class UserBlock {
   get is_permanent() { return this.#is_permanent; }
   get lifted_at() { return this.#lifted_at; }
   get created_at() { return this.#created_at; }
+
+  toJSON() {
+    return {
+      id: this.#id,
+      user_id: this.#user_id,
+      blocked_by: this.#blocked_by,
+      reason: this.#reason,
+      blocked_until: this.#blocked_until,
+      is_permanent: this.#is_permanent,
+      lifted_at: this.#lifted_at,
+      created_at: this.#created_at,
+    };
+  }
 }

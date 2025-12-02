@@ -15,4 +15,13 @@ export default class Permission {
   get name() { return this.#name; }
   get description() { return this.#description; }
   get created_at() { return this.#created_at; }
+
+  toJSON() {
+    return {
+      id: this.#id,
+      name: this.#name,
+      description: this.#description,
+      created_at: this.#created_at,
+    };
+  }
 }
