@@ -1,0 +1,35 @@
+{
+  "name": "user-service",
+  "version": "1.0.0",
+  "description": "User Service for StudyHub Platform - profile, follow, search, privacy, social links, interests",
+  "main": "src/index.js",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "jest"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.1",
+    "cloudinary": "^2.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "file-type": "^21.1.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.15.3",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "depcheck": "^1.4.7",
+    "eslint": "^8.46.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1"
+  }
+}
