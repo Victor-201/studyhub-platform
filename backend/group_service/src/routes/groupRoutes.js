@@ -12,6 +12,14 @@ export function createGroupRouter({ groupService }) {
   const controller = new GroupController({ groupService });
   const role = createGroupRoleMiddleware(groupService);
 
+    // =========================
+  //   CHECK MEMBERSHIP
+  // =========================
+  router.get(
+    "/:group_id/membership",
+    controller.checkMembership.bind(controller)
+  );
+  
   // --- Auth ---
   router.use(verifyAccessToken);
 
@@ -73,13 +81,6 @@ export function createGroupRouter({ groupService }) {
     controller.getActivityLogs.bind(controller)
   );
 
-  // =========================
-  //   CHECK MEMBERSHIP
-  // =========================
-  router.get(
-    "/:group_id/membership",
-    controller.checkMembership.bind(controller)
-  );
 
   return router;
 }

@@ -9,7 +9,7 @@ export class GroupController {
     this.groupService = groupService;
   }
 
- async createGroup(req, res) {
+  async createGroup(req, res) {
     try {
       if (!req.body.name) {
         return res.status(400).json({
@@ -55,7 +55,7 @@ export class GroupController {
 
   async checkMembership(req, res) {
     try {
-      const user_id = req.user.id;
+      const user_id = req.headers["x-user-id"];
       const { group_id } = req.params;
 
       const { group, role } = await this.groupService.checkMembership(
@@ -63,14 +63,12 @@ export class GroupController {
         user_id
       );
 
-      res.json({
-        group: group.toJSON(),
-        role,
-      });
+      res.json({ group, role });
     } catch (err) {
-      res
-        .status(err.status || 500)
-        .json({ success: false, message: err.message });
+      res.status(err.status || 500).json({
+        success: false,
+        message: err.message,
+      });
     }
   }
 

@@ -1,0 +1,225 @@
+version: "3.9"
+
+networks:
+  studyhub:
+    driver: bridge
+
+services:
+  # ---------- MySQL Databases ----------
+  mysql-auth:
+    image: mysql:8.0
+    container_name: mysql-auth
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: auth_db
+    ports:
+      - "3300:3306"
+    volumes:
+      - auth-data:/var/lib/mysql
+      - ../../database/schemas/auth_db.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ../../database/seeds/auth_db_seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    command: >
+      mysqld
+      --character_set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --init-connect='SET NAMES utf8mb4;'
+      --skip-character-set-client-handshake
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - studyhub
+    restart: always
+
+  mysql-user:
+    image: mysql:8.0
+    container_name: mysql-user
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: user_db
+    ports:
+      - "3301:3306"
+    volumes:
+      - user-data:/var/lib/mysql
+      - ../../database/schemas/user_db.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ../../database/seeds/user_db_seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - studyhub
+    restart: always
+
+  mysql-group:
+    image: mysql:8.0
+    container_name: mysql-group
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: group_db
+    ports:
+      - "3302:3306"
+    volumes:
+      - group-data:/var/lib/mysql
+      - ../../database/schemas/group_db.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ../../database/seeds/group_db_seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - studyhub
+    restart: always
+
+  mysql-document:
+    image: mysql:8.0
+    container_name: mysql-document
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: document_db
+    ports:
+      - "3303:3306"
+    volumes:
+      - document-data:/var/lib/mysql
+      - ../../database/schemas/document_db.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ../../database/seeds/document_db_seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - studyhub
+    restart: always
+
+  # ---------- RabbitMQ ----------
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "-q", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    networks:
+      - studyhub
+    restart: always
+
+  # ---------- Backend Services ----------
+  auth-service:
+    build:
+      context: ../../backend/auth_service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../../backend/auth_service/.env
+    depends_on:
+      mysql-auth:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - studyhub
+    restart: always
+
+  user-service:
+    build:
+      context: ../../backend/user_service
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "3001:3001"
+    env_file:
+      - ../../backend/user_service/.env
+    depends_on:
+      mysql-user:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - studyhub
+    restart: always
+
+  group-service:
+    build:
+      context: ../../backend/group_service
+      dockerfile: Dockerfile
+    container_name: group-service
+    ports:
+      - "3002:3002"
+    env_file:
+      - ../../backend/group_service/.env
+    depends_on:
+      mysql-group:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - studyhub
+    restart: always
+
+  document-service:
+    build:
+      context: ../../backend/document_service
+      dockerfile: Dockerfile
+    container_name: document-service
+    ports:
+      - "3003:3003"
+    env_file:
+      - ../../backend/document_service/.env
+    depends_on:
+      mysql-document:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - studyhub
+    restart: always
+
+  # ---------- Kong Gateway ----------
+  kong:
+    image: kong:3.6.0
+    container_name: kong
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+      - "8001:8001"
+    volumes:
+      - ../kong/kong.yml:/kong/kong.yml
+    networks:
+      - studyhub
+    depends_on:
+      - auth-service
+      - user-service
+      - group-service
+      - document-service
+    restart: always
+
+volumes:
+  auth-data:
+  user-data:
+  group-data:
+  document-data:
+  rabbitmq-data:

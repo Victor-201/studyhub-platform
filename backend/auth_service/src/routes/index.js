@@ -7,10 +7,10 @@ import { createUserRouter } from "./userRoutes.js";
 export function createRoutes({ authService, adminService, oauthService, userService }) {
   const router = express.Router();
 
-  router.use("/auth", createAuthRouter({ authService }));
-  router.use("/auth/admin", createAdminRouter({ adminService }));
-  router.use("/auth/oauth", createOAuthRouter({ oauthService, authService }));
-  router.use("/auth/user", createUserRouter({ userService }));
+  router.use("", createAuthRouter({ authService }));
+  router.use("/admin", createAdminRouter({ adminService }));
+  router.use("/oauth", createOAuthRouter({ oauthService, authService }));
+  router.use("/user", createUserRouter({ userService }));
 
   return router;
 }

@@ -118,7 +118,7 @@ const emailService = new EmailService({
 
   // Mount routers
   app.use(
-    "/api/v1",
+    "/api/v1/auth",
     createRoutes({ authService, adminService, oauthService, userService })
   );
 

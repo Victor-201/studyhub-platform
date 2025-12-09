@@ -34,6 +34,9 @@ export const env = {
   // ===== RabbitMQ =====
   RABBITMQ_URL: required("RABBITMQ_URL"), 
   RABBITMQ_EXCHANGE: process.env.RABBITMQ_EXCHANGE || "studyhub_exchange",
+
+  // Other Services
+  GroupService: required("GroupService"),
 };
 
 export default env;
