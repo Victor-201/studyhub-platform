@@ -37,7 +37,7 @@ export function createApp() {
   const userRepo = new UserRepository(pool);
   const profileRepo = new UserProfileDetailsRepository(pool);
   const privacyRepo = new UserPrivacySettingsRepository(pool);
-  const followsRepo = new UserFollowsRepository(pool);
+  const followRepo = new UserFollowsRepository(pool);
   const socialRepo = new UserSocialLinksRepository(pool);
   const interestsRepo = new UserInterestsRepository(pool);
   const eventsRepo = new IncomingEventRepository(pool);
@@ -53,7 +53,7 @@ export function createApp() {
   });
 
   const followService = new FollowService({
-    followsRepo,
+    followRepo,
   });
 
   // Mount routers
