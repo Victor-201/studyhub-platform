@@ -1,8 +1,13 @@
-version: "3.9"
-
 networks:
   studyhub:
     driver: bridge
+
+volumes:
+  auth-data:
+  user-data:
+  group-data:
+  document-data:
+  rabbitmq-data:
 
 services:
   # ---------- MySQL Databases ----------
@@ -20,7 +25,7 @@ services:
       - ../../database/seeds/auth_db_seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
     command: >
       mysqld
-      --character_set-server=utf8mb4
+      --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
       --init-connect='SET NAMES utf8mb4;'
       --skip-character-set-client-handshake
@@ -216,10 +221,3 @@ services:
       - group-service
       - document-service
     restart: always
-
-volumes:
-  auth-data:
-  user-data:
-  group-data:
-  document-data:
-  rabbitmq-data:
