@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+/* =============================================
+   🎨 Bảng màu Blue Ocean - đồng bộ React Native
+   ============================================= */
+@theme {
+  /* === Màu chủ đạo (Blue tone) === */
+  --color-primary:   #002682;  /* màu chính */
+  --color-on-primary: #FFFFFF; /* chữ trên nền primary */
+  --color-secondary: #1E45B5;  /* xanh nhạt hơn primary */
+  --color-accent:    #4A6CFF;  /* điểm nhấn */
+
+  /* === Màu nền & chữ === */
+  --color-background: #FFFFFF;
+  --color-surface:    #FFFFFF;
+  --color-on-background: #000000;
+  --color-on-surface:   #000000;
+
+  /* === Trạng thái === */
+  --color-error:   #f60d01;  /* lỗi */
+  --color-success: #86df20;  /* thành công */
+  --color-warning: #f2ae14;  /* cảnh báo */
+
+  /* === Thang màu thương hiệu (brand scale) === */
+  --color-brand-50:  #E5ECFF;
+  --color-brand-100: #B3C3FF;
+  --color-brand-200: #8099FF;
+  --color-brand-300: #4A6CFF;
+  --color-brand-400: #1E45B5;
+  --color-brand-500: #002682;
+  --color-brand-600: #001F6B;
+  --color-brand-700: #001653;
+}
+
+/* =============================================
+   🌙 Dark mode (nếu có)
+   ============================================= */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =============================================
+   ✨ Cấu hình giao diện chung
+   ============================================= */
+body {
+  @apply bg-[var(--color-background)] text-[var(--color-on-background)]
+         dark:bg-[var(--color-brand-700)] dark:text-[var(--color-brand-50)];
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+}
+
+/* Links */
+a {
+  @apply text-[var(--color-secondary)] hover:text-[var(--color-accent)]
+         dark:text-[var(--color-accent)] dark:hover:text-[var(--color-brand-50)];
+  text-decoration: none;
+}
+
+/* Buttons */
+button:not([data-plain]) {
+  @apply px-4 py-2 rounded-lg 
+         bg-[var(--color-primary)] text-[var(--color-on-primary)]
+         hover:bg-[var(--color-secondary)]
+         transition-colors;
+}
+
+/* Inputs */
+input, select, textarea:not([data-plain]) {
+  @apply border border-[var(--color-brand-200)] rounded-md px-3 py-2
+         focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]
+         dark:border-[var(--color-brand-600)]
+         dark:bg-[var(--color-brand-700)] dark:text-[var(--color-brand-50)];
+}
+
+.editor:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af; /* gray-400 */
+  pointer-events: none;
+}
+
+/* Badge */
+.badge {
+  @apply bg-[var(--color-accent)] text-black px-2 py-1 rounded-full text-sm font-semibold;
+}
+
+/* Card */
+.card {
+  @apply bg-[var(--color-surface)] dark:bg-[var(--color-brand-600)] 
+         shadow rounded-lg p-4;
+}
+
+/* Alerts */
+.alert-error {
+  @apply bg-[var(--color-error)] text-white px-4 py-2 rounded-md;
+}
+.alert-success {
+  @apply bg-[var(--color-success)] text-black px-4 py-2 rounded-md;
+}
+.alert-warning {
+  @apply bg-[var(--color-warning)] text-black px-4 py-2 rounded-md;
+}
