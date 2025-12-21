@@ -7,44 +7,57 @@ cloudinary.v2.config({
   api_secret: env.CLOUDINARY_API_SECRET,
 });
 
-/**
- * Upload ANY file (pdf, docx, pptx, xlsx, zip...)
- * @param {Buffer} buffer
- * @param {Object} options
- */
 export function uploadToCloudinary(buffer, options = {}) {
+  const { public_id, filename } = options;
+
   return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.v2.uploader.upload_stream(
+    const stream = cloudinary.v2.uploader.upload_stream(
       {
         resource_type: "raw",
+        folder: "documents",
+        public_id,
         use_filename: true,
         unique_filename: false,
-        filename_override: options.filename, // tên đầy đủ: document_UUID.ext
-        public_id: options.public_id,        // document_UUID (không đuôi)
-        format: options.extension,           // pdf/docx/pptx
+        filename_override: filename,
+        access_mode: "public",
       },
-      (error, result) => {
-        if (error) return reject(error);
+      (err, result) => {
+        if (err) return reject(err);
         resolve(result);
       }
     );
-
-    uploadStream.end(buffer);
+    stream.end(buffer);
   });
 }
 
-/**
- * Delete file by public_id
- */
-export function deleteFromCloudinary(public_id) {
-  return new Promise((resolve, reject) => {
-    cloudinary.v2.uploader.destroy(
-      public_id,
-      { resource_type: "raw" },
-      (err, res) => {
-        if (err) reject(err);
-        else resolve(res);
-      }
-    );
-  });
+export function getExtensionFromUrl(url = "") {
+  const clean = url.split("?")[0];
+  const parts = clean.split(".");
+  return parts.length > 1 ? parts.pop().toLowerCase() : "";
+}
+
+export function buildPreviewUrl(doc) {
+  if (!doc?.storage_path) return null;
+
+  const url = doc.storage_path;
+  const ext = getExtensionFromUrl(url);
+
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return url;
+  if (["mp4", "webm", "mov"].includes(ext)) return url;
+
+  if (ext === "pdf") {
+    return url.replace("/raw/upload/", "/image/upload/");
+  }
+
+  if (["doc", "docx", "ppt", "pptx", "xls", "xlsx"].includes(ext)) {
+    return `https://docs.google.com/gview?url=${encodeURIComponent(
+      url
+    )}&embedded=true`;
+  }
+
+  return null;
+}
+
+export function buildDownloadUrl(doc) {
+  return doc?.storage_path || null;
 }
