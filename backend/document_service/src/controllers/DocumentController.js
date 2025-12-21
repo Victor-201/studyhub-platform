@@ -3,6 +3,9 @@ export class DocumentController {
     this.documentService = documentService;
   }
 
+  // =====================================================
+  // CREATE
+  // =====================================================
   async createDocument(req, res) {
     try {
       const { title, description, visibility, tags, group_id } = req.body;
@@ -17,7 +20,7 @@ export class DocumentController {
         title,
         description,
         visibility,
-        tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
+        tags: Array.isArray(tags) ? tags : tags ? [tags] : [],
         group_id,
         file: req.file,
       });
@@ -28,20 +31,51 @@ export class DocumentController {
     }
   }
 
+  // =====================================================
+  // ADMIN counts
+  // =====================================================
+  async count(req, res) {
+    try {
+      const counts = await this.documentService.count();
+
+      return res.json(counts);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+
+  // =====================================================
+  // FEEDS
+  // =====================================================
   async getPublicFeed(req, res) {
     try {
-      const docs = await this.documentService.getPublicFeed(20, 0);
+      const limit = Number(req.query.limit) || 50;
+      const offset = Number(req.query.offset) || 0;
+
+      const docs = await this.documentService.getPublicFeed({
+        limit,
+        offset,
+      });
+
       return res.json(docs);
     } catch (err) {
       return res.status(400).json({ error: err.message });
     }
   }
 
-  async getUserFeed(req, res) {
+  async getHomeFeed(req, res) {
     try {
       const limit = Number(req.query.limit) || 50;
       const offset = Number(req.query.offset) || 0;
-      const docs = await this.documentService.getUserFeed(req.user.id, { limit, offset });
+
+      const user_id = req.user?.id || null;
+      const token = req.headers.authorization?.split(" ")[1] || null;
+
+      const docs = await this.documentService.getHomeFeed(user_id, token, {
+        limit,
+        offset,
+      });
+
       return res.json(docs);
     } catch (err) {
       return res.status(400).json({ error: err.message });
@@ -57,51 +91,9 @@ export class DocumentController {
     }
   }
 
-  async getUserPublicDocuments(req, res) {
-  try {
-    const docs = await this.documentService.getUserPublicProfileDocuments(
-      req.params.user_id
-    );
-    return res.json(docs);
-  } catch (err) {
-    return res.status(400).json({ error: err.message });
-  }
-}
-
-
-  async getApprovedDocuments(req, res) {
-    try {
-      const docs = await this.documentService.getApprovedDocuments();
-      return res.json(docs);
-    } catch (err) {
-      return res.status(400).json({ error: err.message });
-    }
-  }
-
-  async getGroupApproved(req, res) {
-    try {
-      const docs = await this.documentService.getGroupApproved(
-        req.params.group_id
-      );
-      return res.json(docs);
-    } catch (err) {
-      return res.status(400).json({ error: err.message });
-    }
-  }
-
-async getGroupPending(req, res) {
-  try {
-    const docs = await this.documentService.getGroupPending(
-      req.params.group_id,
-      req.user.id
-    );
-    return res.json(docs);
-  } catch (err) {
-    return res.status(403).json({ error: err.message });
-  }
-}
-
-  // GET /documents/:id
+  // =====================================================
+  // GET DOCUMENT DETAIL
+  // =====================================================
   async getDocument(req, res) {
     try {
       const doc = await this.documentService.getDocumentDetail(
@@ -115,7 +107,60 @@ async getGroupPending(req, res) {
     }
   }
 
-  // PATCH /documents/:id
+  // =====================================================
+  // USER PUBLIC PROFILE DOCUMENTS
+  // =====================================================
+  async getUserPublicDocuments(req, res) {
+    try {
+      const docs = await this.documentService.getUserPublicProfileDocuments(
+        req.params.user_id
+      );
+
+      return res.json(docs);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+
+  // =====================================================
+  // GROUP
+  // =====================================================
+  async getApprovedDocuments(req, res) {
+    try {
+      const docs = await this.documentService.getApprovedDocuments();
+      return res.json(docs);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+
+  async getGroupApproved(req, res) {
+    try {
+      const docs = await this.documentService.getGroupApproved(
+        req.params.group_id,
+        req.user.id
+      );
+      return res.json(docs);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+
+  async getGroupPending(req, res) {
+    try {
+      const docs = await this.documentService.getGroupPending(
+        req.params.group_id,
+        req.user.id
+      );
+      return res.json(docs);
+    } catch (err) {
+      return res.status(403).json({ error: err.message });
+    }
+  }
+
+  // =====================================================
+  // UPDATE
+  // =====================================================
   async updateDocument(req, res) {
     try {
       const updated = await this.documentService.updateDocument(
@@ -130,7 +175,9 @@ async getGroupPending(req, res) {
     }
   }
 
-  // DELETE /documents/:id
+  // =====================================================
+  // DELETE
+  // =====================================================
   async deleteDocument(req, res) {
     try {
       await this.documentService.deleteDocument(req.params.id, req.user.id);
@@ -140,7 +187,9 @@ async getGroupPending(req, res) {
     }
   }
 
-  // GET /documents/search
+  // =====================================================
+  // SEARCH
+  // =====================================================
   async search(req, res) {
     try {
       const results = await this.documentService.searchDocuments(
@@ -148,6 +197,18 @@ async getGroupPending(req, res) {
         req.user?.id
       );
       return res.json(results);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+
+  // =====================================================
+  // TAGS
+  // =====================================================
+  async getAllTags(req, res) {
+    try {
+      const tags = await this.documentService.getAllTags();
+      return res.json(tags);
     } catch (err) {
       return res.status(400).json({ error: err.message });
     }
