@@ -10,15 +10,21 @@ export class AuthController {
   /** Register a new user */
   async register({ body, headers, ip }, res) {
     try {
-      const { user_name, email, password } = body;
+      const { user_name, email, password, display_name } = body;
+
       const { user, verification_token } = await this.authService.register({
         user_name,
         email,
         password,
+        display_name,
         user_agent: headers["user-agent"],
         ip,
       });
-      res.status(201).json({ user, verificationToken: verification_token });
+
+      res.status(201).json({
+        user,
+        verificationToken: verification_token,
+      });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
@@ -34,19 +40,20 @@ export class AuthController {
       res.status(400).json({ error: err.message });
     }
   }
-  
+
   /** Login user with email or username */
   async login({ body, headers, ip }, res) {
     try {
       const { email, user_name, password } = body;
-      const { user, access_token, refresh_token } = await this.authService.login({
-        email,
-        user_name,
-        password,
-        user_agent: headers["user-agent"],
-        ip,
-      });
-      res.json({ user, accessToken: access_token, refreshToken: refresh_token });
+      const { user, access_token, refresh_token } =
+        await this.authService.login({
+          email,
+          user_name,
+          password,
+          user_agent: headers["user-agent"],
+          ip,
+        });
+      res.json({ user, access_token, refresh_token });
     } catch (err) {
       res.status(401).json({ error: err.message });
     }
@@ -67,7 +74,11 @@ export class AuthController {
   async changePassword({ user, body }, res) {
     try {
       const { old_password, new_password } = body;
-      await this.authService.changePassword(user.id, old_password, new_password);
+      await this.authService.changePassword(
+        user.id,
+        old_password,
+        new_password
+      );
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: err.message });

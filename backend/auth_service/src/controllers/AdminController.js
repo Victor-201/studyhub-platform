@@ -17,6 +17,15 @@ export class AdminController {
     }
   }
 
+  async countAccounts(req, res) {
+    try {
+      const counts = await this.adminService.countAccounts();
+      res.json(counts);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
   /** Lock a user */
   async lockUser(req, res) {
     try {
