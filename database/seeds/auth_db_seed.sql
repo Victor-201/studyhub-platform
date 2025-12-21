@@ -20,7 +20,7 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 ('a3aa4ea2-fabb-4b11-b009-9c087a4141ef', 'b2e96d42-7bb4-4d5d-b1b3-074d9f3e70c3');
 
 -- PASSWORD HASH
-SET @pwd := '$2b$10$abcdefghijklmnopqrstuv12345678901234567890123456789012';
+SET @pwd := '$2b$10$udZEMPOXY.Rs/7P67uYBxOYlm6ADsDE1/nHQipmQOzBUBdfaCmbVq';
 
 -- =========================
 -- ADMIN USER

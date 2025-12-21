@@ -5,18 +5,18 @@ USE user_db;
 -- ==================================================================
 INSERT INTO users (id, display_name, full_name, avatar_url, status)
 VALUES
-('11111111-1111-4111-8111-111111111111', 'admin', 'Administrator', NULL, 'offline'),
+('11111111-1111-4111-8111-111111111111', 'admin', 'Administrator', 'https://res.cloudinary.com/dvzdkwmzn/image/upload/v1765368964/avatars/avatar_11111111-1111-4111-8111-111111111111.png', 'offline'),
 
-('11111111-2222-4222-8222-111111111112', 'user1', 'User One', NULL, 'offline'),
-('11111111-2222-4222-8222-111111111113', 'user2', 'User Two', NULL, 'offline'),
-('11111111-2222-4222-8222-111111111114', 'user3', 'User Three', NULL, 'offline'),
-('11111111-2222-4222-8222-111111111115', 'user4', 'User Four', NULL, 'offline'),
-('11111111-2222-4222-8222-111111111116', 'user5', 'User Five', NULL, 'offline'),
-('11111111-2222-4222-8222-111111111117', 'user6', 'User Six', NULL, 'offline'),
-('11111111-2222-4222-8222-111111111118', 'user7', 'User Seven', NULL, 'offline'),
-('11111111-2222-4222-8222-111111111119', 'user8', 'User Eight', NULL, 'offline'),
-('11111111-2222-4222-8222-111111111120', 'user9', 'User Nine', NULL, 'offline'),
-('11111111-2222-4222-8222-111111111121', 'user10', 'User Ten', NULL, 'offline')
+('11111111-2222-4222-8222-111111111112', 'user1', 'User One', 'https://res.cloudinary.com/dvzdkwmzn/image/upload/v1765368964/avatars/avatar_11111111-1111-4111-8111-111111111111.png', 'offline'),
+('11111111-2222-4222-8222-111111111113', 'user2', 'User Two', 'https://res.cloudinary.com/dvzdkwmzn/image/upload/v1765368964/avatars/avatar_11111111-1111-4111-8111-111111111111.png', 'offline'),
+('11111111-2222-4222-8222-111111111114', 'user3', 'User Three', 'https://res.cloudinary.com/dvzdkwmzn/image/upload/v1765368964/avatars/avatar_11111111-1111-4111-8111-111111111111.png', 'offline'),
+('11111111-2222-4222-8222-111111111115', 'user4', 'User Four', 'https://res.cloudinary.com/dvzdkwmzn/image/upload/v1765368964/avatars/avatar_11111111-1111-4111-8111-111111111111.png', 'offline'),
+('11111111-2222-4222-8222-111111111116', 'user5', 'User Five', 'https://res.cloudinary.com/dvzdkwmzn/image/upload/v1765368964/avatars/avatar_11111111-1111-4111-8111-111111111111.png', 'offline'),
+('11111111-2222-4222-8222-111111111117', 'user6', 'User Six', 'https://res.cloudinary.com/dvzdkwmzn/image/upload/v1765368964/avatars/avatar_11111111-1111-4111-8111-111111111111.png', 'offline'),
+('11111111-2222-4222-8222-111111111118', 'user7', 'User Seven', 'https://res.cloudinary.com/dvzdkwmzn/image/upload/v1765368964/avatars/avatar_11111111-1111-4111-8111-111111111111.png', 'offline'),
+('11111111-2222-4222-8222-111111111119', 'user8', 'User Eight', 'https://res.cloudinary.com/dvzdkwmzn/image/upload/v1765368964/avatars/avatar_11111111-1111-4111-8111-111111111111.png', 'offline'),
+('11111111-2222-4222-8222-111111111120', 'user9', 'User Nine', 'https://res.cloudinary.com/dvzdkwmzn/image/upload/v1765368964/avatars/avatar_11111111-1111-4111-8111-111111111111.png', 'offline'),
+('11111111-2222-4222-8222-111111111121', 'user10', 'User Ten', 'https://res.cloudinary.com/dvzdkwmzn/image/upload/v1765368964/avatars/avatar_11111111-1111-4111-8111-111111111111.png', 'offline')
 ON DUPLICATE KEY UPDATE id=id;
 
 -- ==================================================================
@@ -24,7 +24,7 @@ ON DUPLICATE KEY UPDATE id=id;
 -- ==================================================================
 INSERT INTO user_profile_details (user_id, bio, gender, birthday, country, city)
 VALUES
-('11111111-1111-4111-8111-111111111111', 'System administrator', 'other',     '1990-01-01', 'Vietnam', 'Danang'),
+('11111111-1111-4111-8111-111111111111', 'System administrator', 'other', '1990-01-01', 'Vietnam', 'Danang'),
 
 ('11111111-2222-4222-8222-111111111112', 'Hello, I am user1', 'male',   '2000-01-01', 'Vietnam', 'Hanoi'),
 ('11111111-2222-4222-8222-111111111113', 'Hello, I am user2', 'female', '2000-02-02', 'Vietnam', 'Hanoi'),
