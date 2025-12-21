@@ -2,32 +2,26 @@ import { BaseRepository } from "./BaseRepository.js";
 import GroupActivityLog from "../models/GroupActivityLog.js";
 
 export default class GroupActivityLogRepository extends BaseRepository {
-  constructor(pool) { super(pool, "group_activity_logs"); }
+  constructor(pool) {
+    super(pool, "group_activity_logs");
+  }
 
   async logActivity(data) {
     await this.create(data);
     return new GroupActivityLog(data);
   }
 
-  async findAllByGroup(group_id, { limit = 100, offset = 0 } = {}) {
-    const sql = `SELECT * FROM ${this.table} WHERE group_id=? ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-    const [rows] = await this.pool.query(sql, [group_id, limit, offset]);
-    return rows.map(row => new GroupActivityLog(row));
-  }
+  async list(group_id, action, { limit = 50, offset = 0 } = {}) {
+    let sql = "SELECT * FROM group_activity_logs WHERE group_id=?";
+    const params = [group_id];
+    if (action) {
+      sql += " AND action=?";
+      params.push(action);
+    }
+    sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+    params.push(limit, offset);
 
-  async findAllByActor(actor_id, { limit = 100, offset = 0 } = {}) {
-    const sql = `SELECT * FROM ${this.table} WHERE actor_id=? ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-    const [rows] = await this.pool.query(sql, [actor_id, limit, offset]);
-    return rows.map(row => new GroupActivityLog(row));
-  }
-
-  async updateLog(id, data) {
-    await this.updateById(id, data);
-    const row = await this.findById(id);
-    return row ? new GroupActivityLog(row) : null;
-  }
-
-  async deleteLog(id) {
-    return this.deleteById(id);
+    const [rows] = await this.pool.query(sql, params);
+    return rows.map(r => new GroupActivityLog(r));
   }
 }
