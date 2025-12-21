@@ -1,10 +1,13 @@
 import { randomUUID } from "crypto";
-import { uploadToCloudinary } from "../utils/cloudinary.js";
+import { uploadToCloudinary, buildPreviewUrl } from "../utils/cloudinary.js";
 
 export default class DocumentService {
   constructor({
     documentRepo,
     tagRepo,
+    commentRepo,
+    bookmarkRepo,
+    downloadRepo,
     groupDocRepo,
     groupClient,
     outboxRepo,
@@ -12,15 +15,75 @@ export default class DocumentService {
   }) {
     this.documentRepo = documentRepo;
     this.tagRepo = tagRepo;
+    this.commentRepo = commentRepo;
+    this.bookmarkRepo = bookmarkRepo;
+    this.downloadRepo = downloadRepo;
     this.groupDocRepo = groupDocRepo;
     this.groupClient = groupClient;
     this.outboxRepo = outboxRepo;
     this.logger = logger;
   }
 
-  /**
-   * Create document
-   */
+  /* ================= TAG HELPERS ================= */
+  async _attachTagsToDocument(doc) {
+    if (!doc) return null;
+
+    const [tags, commentCount, bookmarkCount, downloadCount] =
+      await Promise.all([
+        this.tagRepo.findByDocument(doc.id),
+        this.commentRepo.countComments(doc.id),
+        this.bookmarkRepo.countBookmarks(doc.id),
+        this.downloadRepo.countDownloads(doc.id),
+      ]);
+
+    return {
+      id: doc.id,
+      owner_id: doc.owner_id,
+      title: doc.title,
+      description: doc.description,
+      visibility: doc.visibility,
+
+      tag: tags.map((t) => t.tag),
+
+      stats: {
+        comments: commentCount,
+        bookmarks: bookmarkCount,
+        downloads: downloadCount,
+      },
+
+      storage_path: doc.storage_path,
+      preview_url: buildPreviewUrl(doc),
+      created_at: doc.created_at,
+      updated_at: doc.updated_at,
+    };
+  }
+
+  async _attachTagsToDocuments(docs = []) {
+    return Promise.all(docs.map((d) => this._attachTagsToDocument(d)));
+  }
+
+  /* ================= GROUP ACCESS ================= */
+  async _canAccessGroupDocument(document_id, user_id) {
+    const groups = await this.groupDocRepo.findGroupsByDocument(document_id);
+
+    for (const g of groups) {
+      if (g.status !== "APPROVED") continue;
+
+      try {
+        const { allowed } = await this.groupClient.canViewGroupDocuments(
+          g.group_id,
+          user_id
+        );
+        if (allowed) return true;
+      } catch (err) {
+        this.logger.error("Error checking group access:", err.message);
+      }
+    }
+
+    return false;
+  }
+
+  /* ================= CREATE ================= */
   async createDocument({
     owner_id,
     title,
@@ -30,73 +93,53 @@ export default class DocumentService {
     group_id = null,
     file,
   }) {
-    if (!file) throw new Error("file required");
+    if (!file) throw new Error("file_required");
 
     const document_id = randomUUID();
     const now = new Date();
 
-    const originalName = file.originalname || "file";
-    const ext = originalName.includes(".") ? originalName.split(".").pop() : "";
-    const cloudPublicId = `document_${document_id}`;
+    const ext = file.originalname?.split(".").pop()?.toLowerCase() || "";
+    const publicId = `document_${document_id}`;
 
-    // 1) upload to cloud
     const uploaded = await uploadToCloudinary(file.buffer, {
-      public_id: cloudPublicId,
-      filename: ext ? `${cloudPublicId}.${ext}` : cloudPublicId,
-      extension: ext,
+      public_id: publicId,
+      filename: ext ? `${publicId}.${ext}` : publicId,
     });
 
-    const storage_path = uploaded.secure_url;
+    const doc = await this.documentRepo.create({
+      id: document_id,
+      owner_id,
+      title,
+      description,
+      visibility,
+      storage_path: uploaded.secure_url,
+      created_at: now,
+      updated_at: now,
+    });
 
-    // 2) save document in DB
-    let doc;
-    try {
-      doc = await this.documentRepo.create({
-        id: document_id,
-        owner_id,
-        title,
-        description,
-        visibility,
-        storage_path,
-        created_at: now,
-        updated_at: now,
-      });
-    } catch (err) {
-      // Attempt best-effort cleanup of uploaded file if util supports it (non-fatal)
-      try {
-        if (typeof uploadToCloudinary.delete === "function") {
-          await uploadToCloudinary.delete(cloudPublicId);
-        }
-      } catch (cleanupErr) {
-        this.logger.warn("failed to cleanup uploaded cloud file", cleanupErr);
-      }
-      throw err;
+    if (tags?.length) {
+      await this.tagRepo.attachTags(document_id, tags);
     }
 
-    // 3) handle group visibility
-    let groupRecord = null;
     if (visibility === "GROUP") {
-      if (!group_id) throw new Error("group_id required for GROUP visibility");
+      if (!group_id) throw new Error("group_id_required");
 
       const membership = await this.groupClient.getMembership(
         group_id,
         owner_id
       );
-      if (!membership || !membership.role)
-        throw new Error("forbidden_not_group_member");
+      if (!membership?.role) throw new Error("forbidden");
 
       const { autoApprove } = await this.groupClient.evaluateDocumentApproval({
         group_id,
         requester_id: owner_id,
       });
 
-      const status = autoApprove ? "APPROVED" : "PENDING";
-
-      groupRecord = await this.groupDocRepo.createRecord({
+      await this.groupDocRepo.createRecord({
         id: randomUUID(),
         group_id,
         document_id,
-        status,
+        status: autoApprove ? "APPROVED" : "PENDING",
         submitted_by: owner_id,
         reviewed_by: autoApprove ? owner_id : null,
         submitted_at: now,
@@ -104,240 +147,186 @@ export default class DocumentService {
       });
     }
 
-    // 4) tags
-    if (
-      tags &&
-      tags.length > 0 &&
-      this.tagRepo &&
-      typeof this.tagRepo.attachTags === "function"
-    ) {
-      await this.tagRepo.attachTags(document_id, tags);
+    return this._attachTagsToDocument(doc);
+  }
+
+  /* ================= COUNTS ================= */
+  async count() {
+    const countDocuments = await this.documentRepo.countAllDocuments();
+    const countComments = await this.commentRepo.countAllComments();
+    return { countDocuments, countComments };
+  }
+
+  /* ================= FEEDS ================= */
+  async getPublicFeed({ limit = 50, offset = 0 }) {
+    const docs = await this.documentRepo.findPublicFeed({ limit, offset });
+    return this._attachTagsToDocuments(docs);
+  }
+
+  async getHomeFeed(user_id, token, { limit = 50, offset = 0 }) {
+    if (!user_id) {
+      const docs = await this.documentRepo.findPublicFeed({ limit, offset });
+      return this._attachTagsToDocuments(docs);
     }
 
-    // 5) outbox
-    if (this.outboxRepo && typeof this.outboxRepo.insertEvent === "function") {
-      await this.outboxRepo.insertEvent("DOCUMENT.CREATED", {
-        document_id,
-        owner_id,
-        visibility,
-      });
-    }
-
-    return { document: doc, groupRecord };
-  }
-
-  // Guest feed: chỉ PUBLIC
-  async getPublicFeed(limit = 20, offset = 0) {
-    return await this.documentRepo.findPublic(limit, offset);
-  }
-
-  // Home feed cho user: PUBLIC + GROUP APPROVED + PRIVATE của user
-  async getUserFeed(user_id, { limit = 50, offset = 0 } = {}) {
-    // Use repository method that already merges rules and limits N+1 queries
-    return await this.documentRepo.findHomeFeed({
-      userId: user_id,
-      limit,
-      offset,
-    });
-  }
-
-  // My documents
-  async getMyDocuments(owner_id, { limit = 50, offset = 0 } = {}) {
-    return await this.documentRepo.findAllOfOwner(owner_id, { limit, offset });
-  }
-
-async getUserPublicProfileDocuments(target_user_id, { limit = 50, offset = 0 } = {}) {
-  // 1) PUBLIC của user
-  const publicDocs = await this.documentRepo.findPublicOfUser(target_user_id, { limit, offset });
-
-  // 2) GROUP APPROVED user đã đăng
-  const groupRows = await this.groupDocRepo.findApprovedByUser(target_user_id, { limit, offset });
-
-  const publicGroupDocs = [];
-
-  for (const row of groupRows) {
-    const g = row.groupDoc.group_id;
-
+    let groups = [];
     try {
-      // dùng GroupService để check visibility
-      const membership = await this.groupClient.getMembership(g, target_user_id);
+      groups = await this.groupClient.getUserGroups(token, user_id);
+    } catch {}
 
-      if (membership?.group?.visibility === "PUBLIC") {
-        publicGroupDocs.push(row.document);
-      }
-    } catch (err) {
-      // nhóm không truy cập được → coi như không public
-      this.logger.debug("skip group doc visibility check", err.message);
-    }
-  }
+    const groupIds = groups.map((g) => g.group_id);
 
-  // Hợp nhất
-  return [...publicDocs, ...publicGroupDocs];
-}
-
-  // Approved documents trong tất cả groups
-  async getApprovedDocuments({ limit = 50, offset = 0 } = {}) {
-    return await this.groupDocRepo.findApprovedDocuments({ limit, offset });
-  }
-
-  // Approved documents trong 1 group
-  async getGroupApproved(group_id, { limit = 50, offset = 0 } = {}) {
-    return await this.groupDocRepo.findApprovedInGroup(group_id, {
+    const docs = await this.documentRepo.findHomeFeed({
+      user_id,
+      groupIds,
       limit,
       offset,
     });
+
+    return this._attachTagsToDocuments(docs);
   }
 
-  // Pending docs trong 1 group (mod/owner)
-  async getGroupPending(
-    group_id,
-    reviewer_id,
+  async getMyDocuments(owner_id, { limit = 50, offset = 0 } = {}) {
+    const docs = await this.documentRepo.findAllOfOwner(owner_id, {
+      limit,
+      offset,
+    });
+    return this._attachTagsToDocuments(docs);
+  }
+
+  async getUserPublicProfileDocuments(
+    user_id,
     { limit = 50, offset = 0 } = {}
   ) {
-    await this.groupClient.validateReviewer({ group_id, reviewer_id });
-    return await this.groupDocRepo.findPendingInGroup(group_id, {
+    const docs = await this.documentRepo.findPublicOfUser(user_id, {
       limit,
       offset,
     });
+    return this._attachTagsToDocuments(docs);
   }
-
-  // VIEW DOCUMENT DETAIL (CHECK ACCESS RULES)
+  /* ================= DETAIL ================= */
   async getDocumentDetail(document_id, requester_id = null) {
     const doc = await this.documentRepo.findById(document_id);
     if (!doc) throw new Error("document_not_found");
 
-    // PUBLIC always allowed
     if (doc.visibility === "PUBLIC") {
-      return doc;
+      return this._attachTagsToDocument(doc);
     }
 
-    // PRIVATE -> only owner
     if (doc.visibility === "PRIVATE") {
-      if (requester_id === doc.owner_id) return doc;
-      throw new Error("forbidden");
+      if (doc.owner_id !== requester_id) throw new Error("forbidden");
+      return this._attachTagsToDocument(doc);
     }
 
-    // GROUP -> check group membership + approved state
     if (doc.visibility === "GROUP") {
-      const groups = await this.groupDocRepo.findGroupsByDocument(document_id);
-
-      for (const g of groups) {
-        try {
-          const membership = await this.groupClient.getMembership(
-            g.group_id,
-            requester_id
-          );
-          if (!membership || !membership.role) continue;
-
-          // must be APPROVED
-          if (g.status === "APPROVED") return doc;
-        } catch (e) {
-          // ignore per-group errors and continue checking others
-          this.logger.debug("group membership check error", e);
-        }
-      }
-
-      throw new Error("forbidden");
-    }
-
-    return doc;
-  }
-
-  // UPDATE DOCUMENT (ONLY OWNER)
-  async updateDocument(document_id, user_id, updates = {}) {
-    const doc = await this.documentRepo.findById(document_id);
-    if (!doc) throw new Error("document_not_found");
-
-    if (doc.owner_id !== user_id) throw new Error("forbidden");
-
-    const updated = await this.documentRepo.update(document_id, updates);
-
-    if (this.outboxRepo && typeof this.outboxRepo.insertEvent === "function") {
-      await this.outboxRepo.insertEvent("DOCUMENT.UPDATED", {
+      const allowed = await this._canAccessGroupDocument(
         document_id,
-        updated_by: user_id,
-      });
+        requester_id
+      );
+      if (!allowed) throw new Error("forbidden");
+      return this._attachTagsToDocument(doc);
     }
 
-    return updated;
+    return this._attachTagsToDocument(doc);
   }
 
-  // DELETE DOCUMENT (OWNER OR GROUP MOD)
-  async deleteDocument(document_id, user_id) {
+  /* ================= GROUP ================= */
+  async getApprovedDocuments({ limit = 50, offset = 0 } = {}) {
+    const docs = await this.groupDocRepo.findApprovedDocuments({
+      limit,
+      offset,
+    });
+    return this._attachTagsToDocuments(docs);
+  }
+
+  /* ================= GROUP ================= */
+  async getGroupApproved(
+    group_id,
+    requester_id,
+    { limit = 50, offset = 0 } = {}
+  ) {
+    const { allowed, reason } = await this.groupClient.canViewGroupDocuments(
+      group_id,
+      requester_id
+    );
+
+    if (!allowed) throw new Error(reason || "forbidden");
+
+    const docs = await this.groupDocRepo.findApprovedInGroup(group_id, {
+      limit,
+      offset,
+    });
+    return this._attachTagsToDocuments(docs);
+  }
+
+  async getGroupPending(
+    group_id,
+    requester_id,
+    { limit = 50, offset = 0 } = {}
+  ) {
+    const { allowed, reason } = await this.groupClient.canViewGroupDocuments(
+      group_id,
+      requester_id
+    );
+
+    if (!allowed) throw new Error(reason || "forbidden");
+
+    const docs = await this.groupDocRepo.findPendingInGroup(group_id, {
+      limit,
+      offset,
+    });
+    return this._attachTagsToDocuments(docs);
+  }
+
+  /* ================= UPDATE ================= */
+  async updateDocument(document_id, requester_id, updates) {
     const doc = await this.documentRepo.findById(document_id);
     if (!doc) throw new Error("document_not_found");
+    if (doc.owner_id !== requester_id) throw new Error("forbidden");
 
-    // PERSONAL VISIBILITY (PUBLIC or PRIVATE)
-    if (doc.visibility !== "GROUP") {
-      if (doc.owner_id !== user_id) throw new Error("forbidden");
+    const updated = await this.documentRepo.update(document_id, {
+      ...updates,
+      updated_at: new Date(),
+    });
 
-      await this.documentRepo.deleteById(document_id);
-
-      if (
-        this.outboxRepo &&
-        typeof this.outboxRepo.insertEvent === "function"
-      ) {
-        await this.outboxRepo.insertEvent("DOCUMENT.DELETED", {
-          document_id,
-          deleted_by: user_id,
-        });
-      }
-
-      return true;
+    if (updates.tags) {
+      await this.tagRepo.deleteAllTags(document_id);
+      await this.tagRepo.attachTags(document_id, updates.tags);
     }
 
-    // GROUP DOCUMENT
-    const groups = await this.groupDocRepo.findGroupsByDocument(document_id);
-
-    for (const g of groups) {
-      const membership = await this.groupClient.getMembership(
-        g.group_id,
-        user_id
-      );
-
-      const isPrivileged =
-        membership &&
-        (membership.role === "OWNER" || membership.role === "MODERATOR");
-      const isSubmitter = g.submitted_by === user_id;
-
-      if (isPrivileged || isSubmitter) {
-        await this.documentRepo.deleteById(document_id);
-
-        if (
-          this.outboxRepo &&
-          typeof this.outboxRepo.insertEvent === "function"
-        ) {
-          await this.outboxRepo.insertEvent("DOCUMENT.DELETED", {
-            document_id,
-            deleted_by: user_id,
-            group_id: g.group_id,
-          });
-        }
-        return true;
-      }
-    }
-
-    throw new Error("forbidden");
+    return this._attachTagsToDocument(updated);
   }
 
-  // SEARCH DOCUMENTS
-  // (PUBLIC + PRIVATE(owner) + GROUP(approved + member))
+  /* ================= DELETE ================= */
+  async deleteDocument(document_id, requester_id) {
+    const doc = await this.documentRepo.findById(document_id);
+    if (!doc) throw new Error("document_not_found");
+    if (doc.owner_id !== requester_id) throw new Error("forbidden");
+
+    await this.tagRepo.deleteAllTags(document_id);
+    await this.documentRepo.deleteById(document_id);
+  }
+
+  /* ================= SEARCH ================= */
   async searchDocuments(params, requester_id, limit = 50) {
-    const page = Number(params.page) || 1;
+    params.page = Number(params.page) || 1;
     params.limit = params.limit || limit;
-    params.page = page;
 
     const results = await this.documentRepo.search(params);
 
-    // filter by access rules (but number of results limited)
     const filtered = [];
     for (const doc of results) {
       try {
-        const allowed = await this.getDocumentDetail(doc.id, requester_id);
-        if (allowed) filtered.push(doc);
+        await this.getDocumentDetail(doc.id, requester_id);
+        filtered.push(doc);
       } catch {}
     }
 
-    return filtered;
+    return this._attachTagsToDocuments(filtered);
+  }
+
+  /* ================= TAGS ================= */
+  async getAllTags() {
+    return await this.tagRepo.getAllTags();
   }
 }

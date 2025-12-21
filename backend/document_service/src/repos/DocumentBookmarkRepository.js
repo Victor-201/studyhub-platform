@@ -32,11 +32,21 @@ export default class DocumentBookmarkRepository extends BaseRepository {
 
   async findByUser(user_id) {
     const rows = await super.findAll({ user_id });
-    return rows.map(r => new DocumentBookmark(r));
+    return rows.map((r) => new DocumentBookmark(r));
   }
 
   async findByDocument(document_id) {
     const rows = await super.findAll({ document_id });
-    return rows.map(r => new DocumentBookmark(r));
+    return rows.map((r) => new DocumentBookmark(r));
+  }
+
+  async countBookmarks(document_id) {
+    const [rows] = await this.pool.query(
+      `SELECT COUNT(*) AS total 
+     FROM document_bookmarks 
+     WHERE document_id = ?`,
+      [document_id]
+    );
+    return rows[0]?.total || 0;
   }
 }
