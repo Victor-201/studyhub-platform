@@ -1,90 +1,51 @@
-// middlewares/groupRole.js
-import {createError} from "../utils/helper.js";
+import { createError } from "../utils/helper.js";
 
-/**
- * @param {import("../services/GroupService.js").GroupService} groupService
- */
 export function createGroupRoleMiddleware(groupService) {
-  // Hàm helper lấy group_id từ params
-  function extractGroupId(req) {
-    return req.params.group_id || req.params.id;
-  }
-
-  // Hàm helper lấy user_id từ token
-  function extractUserId(req) {
-    if (!req.user || !req.user.id) {
-      throw createError("Invalid token payload: user_id missing", 401);
-    }
+  const getGroupId = req => req.params.group_id || req.params.id;
+  const getUserId = req => {
+    if (!req.user?.id) throw createError("Unauthorized", 401);
     return req.user.id;
-  }
+  };
 
   return {
-    /** USER MUST BE MEMBER */
     requireMember: async (req, res, next) => {
       try {
-        const user_id = extractUserId(req);
-        const group_id = extractGroupId(req);
-
         const { group, role } = await groupService.checkMembership(
-          group_id,
-          user_id
+          getGroupId(req),
+          getUserId(req)
         );
-
         req.membership = { group, role };
         next();
-      } catch (err) {
-        return res
-          .status(err.status || 403)
-          .json({ success: false, message: err.message });
+      } catch (e) {
+        res.status(e.status || 403).json({ message: e.message });
       }
     },
 
-    /** ONLY OWNER */
     requireOwner: async (req, res, next) => {
       try {
-        const user_id = extractUserId(req);
-        const group_id = extractGroupId(req);
-
-        const { group, role } = await groupService.checkMembership(
-          group_id,
-          user_id
+        const { role } = await groupService.checkMembership(
+          getGroupId(req),
+          getUserId(req)
         );
-
-        if (role !== "owner") {
-          throw createError("Owner permission required", 403);
-        }
-
-        req.membership = { group, role };
+        if (role !== "OWNER") throw createError("Owner only", 403);
         next();
-      } catch (err) {
-        return res
-          .status(err.status || 403)
-          .json({ success: false, message: err.message });
+      } catch (e) {
+        res.status(e.status || 403).json({ message: e.message });
       }
     },
 
-    /** OWNER + ADMIN + MOD */
     requireManager: async (req, res, next) => {
       try {
-        const user_id = extractUserId(req);
-        const group_id = extractGroupId(req);
-
-        const { group, role } = await groupService.checkMembership(
-          group_id,
-          user_id
+        const { role } = await groupService.checkMembership(
+          getGroupId(req),
+          getUserId(req)
         );
-
-        const allowed = ["owner", "admin", "mod"];
-        if (!allowed.includes(role)) {
-          throw createError("Manager permission required", 403);
+        if (!["OWNER", "MODERATOR"].includes(role)) {
+          throw createError("Manager only", 403);
         }
-
-        req.membership = { group, role };
         next();
-      } catch (err) {
-        return res
-          .status(err.status || 403)
-          .json({ success: false, message: err.message });
+      } catch (e) {
+        res.status(e.status || 403).json({ message: e.message });
       }
     },
   };
