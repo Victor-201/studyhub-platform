@@ -7,11 +7,39 @@ export function createFollowRouter({ followService }) {
   const controller = new FollowController({ followService });
 
   router.post("/follow", verifyAccessToken, controller.follow.bind(controller));
-  router.post("/unfollow", verifyAccessToken, controller.unfollow.bind(controller));
-  router.get("/:user_id/counts", verifyAccessToken, controller.getFollowCounts.bind(controller));
-  router.get("/:user_id/friends", verifyAccessToken, controller.getFriends.bind(controller));
-  router.get("/is-following", verifyAccessToken, controller.isFollowing.bind(controller));
-  router.get("/is-friend", verifyAccessToken, controller.isFriend.bind(controller));
+  router.post(
+    "/unfollow",
+    verifyAccessToken,
+    controller.unfollow.bind(controller)
+  );
+  router.get(
+    "/:user_id/counts",
+    verifyAccessToken,
+    controller.getFollowCounts.bind(controller)
+  );
+  router.get(
+    "/:user_id/friends",
+    verifyAccessToken,
+    controller.getFriends.bind(controller)
+  );
+  router.get(
+    "/:user_id/followers",
+    controller.getFollowers.bind(controller)
+  );
+  router.get(
+    "/:user_id/following",
+    controller.getFollowing.bind(controller)
+  );
+  router.get(
+    "/is-following",
+    verifyAccessToken,
+    controller.isFollowing.bind(controller)
+  );
+  router.get(
+    "/is-friend",
+    verifyAccessToken,
+    controller.isFriend.bind(controller)
+  );
 
   return router;
 }

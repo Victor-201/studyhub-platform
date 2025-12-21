@@ -10,6 +10,7 @@ export function createAdminRouter({ adminService }) {
   router.use(verifyAccessToken, requireRole("admin"));
 
   router.get("/users", controller.listUsers.bind(controller));
+  router.get("/count/accounts", controller.countAccounts.bind(controller));
   router.post("/users/:userId/lock", controller.lockUser.bind(controller));
   router.post("/users/:userId/unlock", controller.unlockUser.bind(controller));
   router.post("/users/:userId/block", controller.blockUser.bind(controller));

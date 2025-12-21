@@ -29,12 +29,20 @@ export class UserRepository extends BaseRepository {
 
   async findAll(where = {}, orderBy = "created_at DESC") {
     const rows = await super.findAll(where, orderBy);
-    return rows.map(row => new User(row));
+    return rows.map((row) => new User(row));
   }
 
   async create(data) {
     const row = await super.create(data);
     return new User(row);
+  }
+
+  async countByStatus(status) {
+    const [rows] = await this.pool.query(
+      `SELECT COUNT(*) as count FROM users WHERE status = ?`,
+      [status]
+    );
+    return rows[0].count;
   }
 
   async updateById(id, data) {

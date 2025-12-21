@@ -7,13 +7,13 @@ export class UserRoleRepository extends BaseRepository {
   }
 
   async findByUserId(user_id) {
-    const rows = await this.findAll({ user_id });
-    return rows.map(row => new UserRole(row));
+    const rows = await this.findAll({ user_id }, "assigned_at DESC");
+    return rows.map((row) => new UserRole(row));
   }
 
   async findByRoleId(role_id) {
-    const rows = await this.findAll({ role_id });
-    return rows.map(row => new UserRole(row));
+    const rows = await this.findAll({ role_id }, "assigned_at DESC");
+    return rows.map((row) => new UserRole(row));
   }
 
   async assignRole(data) {

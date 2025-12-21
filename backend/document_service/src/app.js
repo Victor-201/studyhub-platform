@@ -58,9 +58,12 @@ export function createApp() {
   const documentService = new DocumentService({
     documentRepo,
     tagRepo,
+    commentRepo,
+    bookmarkRepo,
+    downloadRepo,
     groupDocRepo,
     groupClient,
-    outboxRepo
+    outboxRepo,
   });
 
   const documentInteractionsService = new DocumentInteractionsService({
@@ -69,7 +72,7 @@ export function createApp() {
     downloadRepo,
     documentRepo,
     groupClient,
-    outboxRepo
+    outboxRepo,
   });
 
   const outboxService = new OutboxService({ outboxRepo });
@@ -77,7 +80,7 @@ export function createApp() {
   const deps = {
     documentService,
     documentInteractionsService,
-    outboxService
+    outboxService,
   };
 
   // ===== Routes =====
@@ -115,7 +118,7 @@ export function createApp() {
     bookmarkRepo,
     commentRepo,
     downloadRepo,
-    outboxRepo
+    outboxRepo,
   };
 
   // ===== Start background loops =====

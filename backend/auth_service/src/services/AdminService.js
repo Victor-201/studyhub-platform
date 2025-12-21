@@ -47,6 +47,17 @@ export class AdminService {
   }
 
   /**
+   * Count accounts by status
+   * @returns {Promise<Object>} Counts of accounts
+   */
+  async countAccounts() {
+    const active = await this.userRepo.countByStatus("active");
+    const blocked = await this.userRepo.countByStatus("blocked");
+    const deleted = await this.userRepo.countByStatus("deleted");
+    return { active, blocked, deleted };
+  }
+
+  /**
    * Lock a user account
    * @param {string} user_id - User ID
    * @param {string} admin_id - Admin performing the action
@@ -167,7 +178,8 @@ export class AdminService {
    * @returns {Promise<boolean>}
    */
   async updateRole(user_id, role_name, admin_id) {
-    if (!user_id || !role_name || !admin_id) throw new Error("Missing parameters");
+    if (!user_id || !role_name || !admin_id)
+      throw new Error("Missing parameters");
     const role = await this.roleRepo.findByName(role_name);
     if (!role) throw new Error("Role not found");
     await this.userRoleRepo.assignRole({

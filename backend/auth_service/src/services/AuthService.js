@@ -26,6 +26,7 @@ export class AuthService {
     auditRepo,
     userRoleRepo,
     roleRepo,
+    outboxRepo,
     emailService,
   }) {
     this.emailService = emailService;
@@ -37,6 +38,7 @@ export class AuthService {
     this.auditRepo = auditRepo;
     this.userRoleRepo = userRoleRepo;
     this.roleRepo = roleRepo;
+    this.outboxRepo = outboxRepo;
     this.SALT_ROUNDS = 10;
   }
 
@@ -50,9 +52,16 @@ export class AuthService {
    * @param {string} [payload.ip]
    * @returns {Promise<{user:Object, verification_token:string}>}
    */
-  async register({ user_name, email, password, user_agent = null, ip = null }) {
-    if (!user_name || !email || !password)
-      throw new Error("Username, email and password are required");
+  async register({
+    user_name,
+    email,
+    password,
+    display_name,
+    user_agent = null,
+    ip = null,
+  }) {
+    if (!user_name || !email || !password || !display_name)
+      throw new Error("Username, email, display name and password are required");
 
     const existingUser = await this.userRepo.findByUserName(user_name);
     if (existingUser) throw new Error("Username already exists");
@@ -95,7 +104,7 @@ export class AuthService {
       subject: "Verify your StudyHub account",
       html: `<p>Hello ${user_name},</p>
              <p>Please verify your email by clicking the link below:</p>
-             <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">Verify Email</a>
+             <a href="${process.env.FRONTEND_URL}/auth/verify-email?token=${token}">Verify Email</a>
              <p>This link will expire in 24 hours.</p>`,
       from: "StudyHub <no-reply@studyhub.com>",
     });
@@ -117,6 +126,23 @@ export class AuthService {
       created_at: new Date(),
     });
 
+    await this.outboxRepo.insertEvent(
+      "user.created",
+      {
+        id: newUser.id,
+        user_name,
+        email,
+        display_name,
+        created_at: newUser.created_at,
+      },
+      {
+        aggregate_type: "User",
+        aggregate_id: newUser.id,
+        routing_key: "user.created",
+      }
+    );
+
+    console.log("[OUTBOX] user.created event inserted");
     return { user: newUser, verification_token: token };
   }
 
@@ -129,7 +155,9 @@ export class AuthService {
     if (!token) throw new Error("Token required");
 
     const token_hash = createTokenHash(token);
-    const verification = await this.emailVerificationRepo.findByHash(token_hash);
+    const verification = await this.emailVerificationRepo.findByHash(
+      token_hash
+    );
     if (!verification) throw new Error("Invalid token");
     if (verification.used_at) throw new Error("Token already used");
     if (new Date() > verification.expires_at) throw new Error("Token expired");
@@ -139,7 +167,9 @@ export class AuthService {
     });
     await this.emailVerificationRepo.markUsed(verification.id);
 
-    const userEmail = await this.userEmailRepo.findById(verification.user_email_id);
+    const userEmail = await this.userEmailRepo.findById(
+      verification.user_email_id
+    );
     await this.auditRepo.logAction({
       id: uuidv4(),
       actor_user_id: userEmail.user_id,
@@ -167,6 +197,7 @@ export class AuthService {
     let user;
     let emailRow;
 
+    // ======== FIND USER BY EMAIL ========
     if (email) {
       emailRow = await this.userEmailRepo.findByEmail(email);
       if (!emailRow) throw new Error("Invalid credentials");
@@ -174,20 +205,43 @@ export class AuthService {
 
       user = await this.userRepo.findById(emailRow.user_id);
       if (!user) throw new Error("Invalid credentials");
-    } else {
+    }
+
+    // ======== FIND USER BY USERNAME ========
+    else {
       user = await this.userRepo.findByUserName(user_name);
       if (!user) throw new Error("Invalid credentials");
+
       const emails = await this.userEmailRepo.getUserEmails(user.id);
       emailRow = emails.find((e) => e.is_verified === 1);
+
       if (!emailRow) throw new Error("Email not verified");
     }
 
+    // ======== PASSWORD VALIDATION ========
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) throw new Error("Invalid credentials");
 
-    const access_token = signAccessToken({ id: user.id, name: user.user_name });
+    // ======== GET USER ROLES ========
+    const roleAssignments = await this.userRoleRepo.findByUserId(user.id);
+
+    const roleNames = [];
+    for (const ra of roleAssignments) {
+      const role = await this.roleRepo.findById(ra.role_id);
+      if (role) roleNames.push(role.name);
+    }
+
+    // ======== GENERATE TOKENS ========
+    const access_token = signAccessToken({
+      id: user.id,
+      name: user.user_name,
+      role: roleNames,
+      primary_email: emailRow.email,
+    });
+
     const refresh_token = signRefreshToken({ id: user.id });
 
+    // ======== STORE SESSION ========
     await this.sessionRepo.create({
       id: uuidv4(),
       user_id: user.id,
@@ -198,6 +252,7 @@ export class AuthService {
       user_agent,
     });
 
+    // ======== LOG LOGIN EVENT ========
     await this.auditRepo.logAction({
       id: uuidv4(),
       actor_user_id: user.id,
@@ -205,7 +260,17 @@ export class AuthService {
       created_at: new Date(),
     });
 
-    return { user, access_token, refresh_token };
+    // ======== FINAL RETURN (THEO FORMAT YÊU CẦU) ========
+    return {
+      user: {
+        id: user.id,
+        user_name: user.user_name,
+        role: roleNames.length === 1 ? roleNames[0] : roleNames,
+        primary_email: emailRow.email,
+      },
+      access_token,
+      refresh_token,
+    };
   }
 
   /**

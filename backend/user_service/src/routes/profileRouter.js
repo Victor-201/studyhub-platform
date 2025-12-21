@@ -5,8 +5,9 @@ import { verifyAccessToken } from "../middlewares/auth.js";
 export function createProfileRouter({ profileService }) {
   const router = Router();
   const controller = new ProfileController({ profileService });
-
-  router.get("/:user_id", verifyAccessToken, controller.getProfile.bind(controller));
+  
+  router.get("/:user_id", controller.getInfo.bind(controller));
+  router.get("/detail/:user_id", verifyAccessToken, controller.getProfile.bind(controller));
   router.put("/:user_id", verifyAccessToken, controller.updateProfile.bind(controller));
   router.put("/:user_id/avatar", verifyAccessToken, ...controller.updateAvatar);
   router.get("/:user_id/privacy", verifyAccessToken, controller.getPrivacy.bind(controller));
