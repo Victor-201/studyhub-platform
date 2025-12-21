@@ -13,171 +13,134 @@ export class GroupService {
     this.activityRepo = activityRepo;
   }
 
-// =========================
-// CREATE GROUP SERVICE
-// =========================
-async createGroup({
-  name,
-  description,
-  access = "PUBLIC",
-  user_id,
-  auto_approve_docs = false,
-  file = null,
-  folder = "avatars",
-}) {
-  const group_id = uuidv4();
-  let avatar_url = null;
+  async createGroup({
+    name,
+    description,
+    access = "PUBLIC",
+    user_id,
+    auto_approve_docs = false,
+    file = null,
+    folder = "avatars",
+  }) {
+    const group_id = uuidv4();
+    let avatar_url = null;
 
-  if (file && file.buffer) {
-    const allowedExts = ["jpg", "jpeg", "png", "webp"];
-    const type = await fileTypeFromBuffer(file.buffer);
+    if (file?.buffer) {
+      const type = await fileTypeFromBuffer(file.buffer);
+      const allowed = ["jpg", "jpeg", "png", "webp"];
+      if (!type || !allowed.includes(type.ext))
+        throw createError("Invalid image type");
 
-    if (!type || !allowedExts.includes(type.ext)) {
-      throw createError("Uploaded file is not a valid image.");
+      const uploaded = await uploadToCloudinary(file.buffer, {
+        folder,
+        public_id: `group_${group_id}`,
+        overwrite: true,
+      });
+      avatar_url = uploaded.secure_url;
     }
 
-    const public_id = `avatar_${group_id}`;
-    const buffer = Buffer.isBuffer(file.buffer) ? file.buffer : Buffer.from(file.buffer);
-
-    const uploaded = await uploadToCloudinary(buffer, {
-      folder,
-      public_id,
-      overwrite: true,
+    const group = await this.groupRepo.createGroup({
+      id: group_id,
+      name,
+      description: description || null,
+      access,
+      avatar_url,
+      auto_approve_docs,
     });
 
-    avatar_url = uploaded.secure_url;
+    await this.memberRepo.addMember({ group_id, user_id, role: "OWNER" });
+
+    await this.activityRepo.logActivity({
+      id: uuidv4(),
+      group_id,
+      actor_id: user_id,
+      action: "CREATE_GROUP",
+    });
+
+    await publishEvent(RMQ_ROUTING_KEYS.GROUP.CREATED, { group_id, user_id });
+    return group;
   }
 
-  const group = await this.groupRepo.createGroup({
-    id: group_id,
-    name,
-    description: description || null,
-    access,
-    avatar_url,
-    auto_approve_docs,
-  });
-
-  if (!group) throw createError("Group creation failed");
-
-  // Owner auto join
-  await this.memberRepo.addMember({
-    group_id,
-    user_id,
-    role: "OWNER",
-  });
-
-  // Log activity
-  await this.activityRepo.logActivity({
-    id: uuidv4(),
-    group_id,
-    actor_id: user_id,
-    action: "CREATE_GROUP",
-  });
-
-  // Publish event
-  await publishEvent(RMQ_ROUTING_KEYS.GROUP.CREATED, {
-    group_id,
-    user_id,
-  });
-
-  // Trả về object Group
-  return group;
-}
-
-
-  // =========================
-  // CHECK MEMBERSHIP
-  // =========================
   async checkMembership(group_id, user_id) {
-    const group = await this.groupRepo.getGroupById(group_id);
+    const group = await this.groupRepo.getGroupById(group_id, user_id);
     if (!group) throw createError("Group not found", 404);
+    return { group };
+  }
 
+  async checkAccess(group_id, user_id) {
     const member = await this.memberRepo.getMember(group_id, user_id);
-    if (!member) throw createError("User is not a member", 403);
-
-    return { group, role: member.role };
+    if (!member) throw createError("Not a member", 403);
+    return member.role;
   }
 
-  // =========================
-  // GET GROUPS OWNED BY USER
-  // =========================
-  async getUserOwnedGroups(owner_id) {
-    return this.groupRepo.getGroupsByOwner(owner_id);
+  async updateGroup(group_id, data) {
+    return this.groupRepo.updateGroup(group_id, data);
   }
 
-  // =========================
-  // UPDATE GROUP
-  // =========================
-  async updateGroup(id, data) {
-    const group = await this.groupRepo.getGroupById(id);
-    if (!group) throw createError("Group not found", 404);
-    return this.groupRepo.updateGroup(id, data);
-  }
-
-  // =========================
-  // UPDATE AVATAR
-  // =========================
   async updateAvatar(group_id, file) {
-    if (!file?.buffer) throw createError("No avatar file uploaded");
+    if (!file?.buffer) throw createError("No avatar uploaded");
 
     const type = await fileTypeFromBuffer(file.buffer);
     const allowed = ["jpg", "jpeg", "png", "webp"];
-    if (!type || !allowed.includes(type.ext)) {
+    if (!type || !allowed.includes(type.ext))
       throw createError("Invalid image type");
-    }
-
-    const group = await this.groupRepo.getGroupById(group_id);
-    if (!group) throw createError("Group not found", 404);
 
     const uploaded = await uploadToCloudinary(file.buffer, {
       folder: "group_avatars",
       public_id: `group_${group_id}`,
       overwrite: true,
     });
-
     return this.groupRepo.updateGroup(group_id, {
       avatar_url: uploaded.secure_url,
     });
   }
 
-  // =========================
-  // DELETE GROUP
-  // =========================
-  async deleteGroup(id) {
-    const group = await this.groupRepo.getGroupById(id);
-    if (!group) throw createError("Group not found", 404);
+  async deleteGroup(group_id, actor_id) {
+    const member = await this.memberRepo.getMember(group_id, actor_id);
+    if (!member || member.role !== "OWNER")
+      throw createError("Only owner can delete group", 403);
 
-    await this.groupRepo.deleteGroup(id);
-
-    await publishEvent(RMQ_ROUTING_KEYS.GROUP.DELETED, {
-      group_id: id,
-    });
-
+    await this.groupRepo.deleteGroup(group_id);
+    await publishEvent(RMQ_ROUTING_KEYS.GROUP.DELETED, { group_id });
     return true;
   }
 
-  // =========================
-  // GET GROUP, SEARCH GROUPS
-  // =========================
-  async getGroupById(id) {
-    return this.groupRepo.getGroupById(id);
+  async getGroupDetail(group_id, user_id) {
+    return this.groupRepo.getGroupById(group_id, user_id);
   }
 
-  async findGroups({ namePattern, limit = 20, offset = 0 }) {
-    return namePattern
-      ? this.groupRepo.findByNameLike(namePattern, { limit, offset })
-      : this.groupRepo.findAllGroups({ limit, offset });
+  async listGroupsByUser(user_id, options = {}) {
+    return this.memberRepo.listGroupsByUser(user_id, options);
   }
 
-  // =========================
-  // JOIN / REQUEST JOIN GROUP
-  // =========================
+  async listOwnedGroups(user_id) {
+    return this.memberRepo.listOwnedGroups(user_id);
+  }
+
+  async findGroups({ name, access, limit, offset }, user_id = null) {
+    if (name)
+      return this.groupRepo.findByNameLike(name, { limit, offset }, user_id);
+    return this.groupRepo.findAllGroups({ access, limit, offset }, user_id);
+  }
+
+  async listGroupsNotJoined(user_id, { limit, offset }) {
+    return this.groupRepo.findGroupsNotJoined(user_id, { limit, offset });
+  }
+
+  async countGroups() {
+    return this.groupRepo.countGroups();
+  }
+
+  async getAllGroups({ limit, offset }) {
+    return this.groupRepo.getAllGroups({ limit, offset });
+  }
+
   async joinGroup(group_id, user_id) {
     const group = await this.groupRepo.getGroupById(group_id);
     if (!group) throw createError("Group not found");
 
-    const exists = await this.memberRepo.getMember(group_id, user_id);
-    if (exists) return exists;
+    const existed = await this.memberRepo.getMember(group_id, user_id);
+    if (existed) return existed;
 
     if (group.access === "PUBLIC") {
       const member = await this.memberRepo.addMember({
@@ -185,78 +148,122 @@ async createGroup({
         user_id,
         role: "MEMBER",
       });
-
       await this.activityRepo.logActivity({
         id: uuidv4(),
         group_id,
         actor_id: user_id,
         action: "JOIN_GROUP",
       });
-
       return member;
     }
 
-    return this.joinRepo.createRequest({
-      id: uuidv4(),
-      group_id,
-      user_id,
-    });
+    return this.joinRepo.createRequest({ id: uuidv4(), group_id, user_id });
   }
 
-  // =========================
-  // APPROVE / REJECT REQUEST
-  // =========================
   async approveJoinRequest(request_id, actor_id) {
-    const request = await this.joinRepo.getRequestById(request_id);
-    if (!request) throw createError("Request not found");
+    const req = await this.joinRepo.getById(request_id);
+    if (!req) throw createError("Request not found");
 
-    await this.joinRepo.updateRequestStatus(request_id, "APPROVED", new Date());
-
+    await this.joinRepo.updateStatus(request_id, "APPROVED");
     const member = await this.memberRepo.addMember({
-      group_id: request.group_id,
-      user_id: request.user_id,
+      group_id: req.group_id,
+      user_id: req.user_id,
       role: "MEMBER",
     });
 
     await this.activityRepo.logActivity({
       id: uuidv4(),
-      group_id: request.group_id,
+      group_id: req.group_id,
       actor_id,
+      target_id: req.user_id,
       action: "APPROVE_JOIN",
-      target_id: request.user_id,
     });
-
     return member;
   }
 
   async rejectJoinRequest(request_id, actor_id) {
-    const request = await this.joinRepo.getRequestById(request_id);
-    if (!request) throw createError("Request not found");
+    const req = await this.joinRepo.getById(request_id);
+    if (!req) throw createError("Request not found");
 
-    await this.joinRepo.updateRequestStatus(request_id, "REJECTED", new Date());
-
+    await this.joinRepo.updateStatus(request_id, "REJECTED");
     await this.activityRepo.logActivity({
       id: uuidv4(),
-      group_id: request.group_id,
+      group_id: req.group_id,
       actor_id,
-      target_id: request.user_id,
+      target_id: req.user_id,
       action: "REJECT_JOIN",
     });
-
-    return request;
+    return true;
   }
 
-  // =========================
-  // PENDING REQUEST LIST
-  // =========================
-  async getPendingRequests(group_id) {
-    return this.joinRepo.getPendingRequests(group_id);
+  async cancelJoinRequest(group_id, user_id) {
+    const req = await this.joinRepo.get(group_id, user_id);
+    if (!req) throw createError("Request not found");
+    if (req.status !== "PENDING")
+      throw createError("Cannot cancel processed request");
+
+    await this.joinRepo.deleteRequest(req.id);
+    await this.activityRepo.logActivity({
+      id: uuidv4(),
+      group_id,
+      actor_id: user_id,
+      action: "CANCEL_JOIN_REQUEST",
+    });
+    return true;
   }
 
-  // =========================
-  // ACTIVITY LOGS
-  // =========================
-  async getActivityLogs(group_id) {
-    return this.activityRepo.getLogs(group_id);
+  async inviteMember(group_id, target_id, actor_id) {
+    const group = await this.groupRepo.getGroupById(group_id);
+    if (!group) throw createError("Group not found");
+
+    const actor = await this.memberRepo.getMember(group_id, actor_id);
+    if (!actor || !["OWNER", "MODERATOR"].includes(actor.role))
+      throw createError("No permission to invite", 403);
+
+    const existed = await this.memberRepo.getMember(group_id, target_id);
+    if (existed) return existed;
+
+    if (group.access === "PUBLIC") {
+      const member = await this.memberRepo.addMember({
+        group_id,
+        user_id: target_id,
+        role: "MEMBER",
+      });
+      await this.activityRepo.logActivity({
+        id: uuidv4(),
+        group_id,
+        actor_id,
+        target_id,
+        action: "INVITE_MEMBER",
+      });
+      return member;
+    } else {
+      const req = await this.joinRepo.createRequest({
+        id: uuidv4(),
+        group_id,
+        user_id: target_id,
+      });
+      await this.activityRepo.logActivity({
+        id: uuidv4(),
+        group_id,
+        actor_id,
+        target_id,
+        action: "INVITE_MEMBER_REQUEST",
+      });
+      return req;
+    }
+  }
+
+  async isJoinPending(group_id, user_id) {
+    const request = await this.joinRepo.get(group_id, user_id);
+    return request?.status === "PENDING" || false;
+  }
+
+  async getActivityLogs(group_id, action, paging) {
+    return this.activityRepo.list(group_id, action, paging);
+  }
+
+  async emitEvent(key, payload) {
+    await publishEvent(key, payload);
   }
 }

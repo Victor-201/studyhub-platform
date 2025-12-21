@@ -7,46 +7,96 @@ export class MemberController {
     this.memberService = memberService;
   }
 
-  async getGroupMembers(req, res) {
+  // 10. LIST MEMBERS
+  async listMembers(req, res) {
     try {
       const { group_id } = req.params;
-      const members = await this.memberService.getMembersByGroup(group_id);
+      const { role, limit, offset } = req.query;
+
+      const limitNum = Number(limit) || 50;
+      const offsetNum = Number(offset) || 0;
+
+      const members = await this.memberService.listMembers(group_id, role, {
+        limit: limitNum,
+        offset: offsetNum,
+      });
+
       res.json({ success: true, data: members });
     } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
+      res
+        .status(err.status || 500)
+        .json({ success: false, message: err.message });
     }
   }
 
-  async getUserGroups(req, res) {
+  // 11. LEAVE GROUP
+  async leaveGroup(req, res) {
     try {
+      const { group_id } = req.params;
       const user_id = req.user.id;
-      const groups = await this.memberService.getUserGroups(user_id);
-      res.json({ success: true, data: groups });
+
+      await this.memberService.leaveGroup(group_id, user_id);
+      res.json({ success: true });
     } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
+      res
+        .status(err.status || 500)
+        .json({ success: false, message: err.message });
     }
   }
 
-  async removeMember(req, res) {
+  // 12. KICK MEMBER
+  async kickMember(req, res) {
     try {
+      const { group_id, user_id: target_id } = req.params;
       const actor_id = req.user.id;
-      const { group_id, user_id } = req.params;
-      const result = await this.memberService.removeMember(group_id, user_id, actor_id);
-      res.json({ success: true, data: result });
+
+      await this.memberService.kickMember(group_id, target_id, actor_id);
+      res.json({ success: true });
     } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
+      res
+        .status(err.status || 500)
+        .json({ success: false, message: err.message });
     }
   }
 
-  async changeMemberRole(req, res) {
+  // 13. CHANGE ROLE
+  async changeRole(req, res) {
     try {
-      const actor_id = req.user.id;
-      const { group_id, user_id } = req.params;
+      const { group_id, user_id: target_id } = req.params;
       const { role } = req.body;
-      const result = await this.memberService.changeMemberRole(group_id, user_id, role, actor_id);
+      const actor_id = req.user.id;
+
+      const result = await this.memberService.changeRole(
+        group_id,
+        target_id,
+        role,
+        actor_id
+      );
       res.json({ success: true, data: result });
     } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
+      res
+        .status(err.status || 500)
+        .json({ success: false, message: err.message });
+    }
+  }
+
+  // TRANSFER OWNERSHIP
+  async transferOwnership(req, res) {
+    try {
+      const { group_id, new_owner_id: target_id } = req.params;
+      const actor_id = req.user.id;
+
+      const result = await this.memberService.changeRole(
+        group_id,
+        target_id,
+        "OWNER",
+        actor_id
+      );
+      res.json({ success: true, data: result });
+    } catch (err) {
+      res
+        .status(err.status || 500)
+        .json({ success: false, message: err.message });
     }
   }
 }
