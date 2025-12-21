@@ -1,28 +1,47 @@
-import {BaseRepository} from './BaseRepository.js';
-import IncomingEvent from '../models/IncomingEvent.js';
+import { BaseRepository } from "./BaseRepository.js";
+import IncomingEvent from "../models/IncomingEvent.js";
+import crypto from "crypto";
 
 export class IncomingEventRepository extends BaseRepository {
   constructor(pool) {
-    super(pool, 'incoming_events');
+    super(pool, "incoming_events");
   }
 
-  async findById(id) {
-    const row = await super.findById(id);
-    return row ? new IncomingEvent(row) : null;
+  async recordEvent({ event_source, event_type, payload }) {
+    const id = crypto.randomUUID();
+
+    const row = {
+      id,
+      event_source,
+      event_type,
+      payload: JSON.stringify(payload),
+      consumed_at: null,
+      created_at: new Date(),
+    };
+
+    await super.create(row);
+    return new IncomingEvent(row);
+  }
+
+  async getUnconsumed(limit = 50) {
+    const [rows] = await this.pool.query(
+      `SELECT * FROM incoming_events 
+       WHERE consumed_at IS NULL 
+       ORDER BY created_at ASC 
+       LIMIT ?`,
+      [limit]
+    );
+
+    return rows.map((r) => new IncomingEvent(r));
   }
 
   async markConsumed(id) {
     await this.pool.query(
-      `UPDATE ${this.table} SET consumed_at=NOW() WHERE id=?`,
-      [id]
+      `UPDATE incoming_events SET consumed_at=? WHERE id=?`,
+      [new Date(), id]
     );
-  }
 
-  async deleteById(id) {
-    return super.deleteById(id);
-  }
-
-  async createEvent(data) {
-    return super.create(data);
+    const row = await super.findById(id);
+    return new IncomingEvent(row);
   }
 }

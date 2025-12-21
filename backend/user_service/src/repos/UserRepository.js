@@ -1,23 +1,22 @@
-import { BaseRepository } from './BaseRepository.js';
-import User from '../models/User.js';
-import { v4 as uuidv4 } from 'uuid';
+import { BaseRepository } from "./BaseRepository.js";
+import User from "../models/User.js";
 
 export class UserRepository extends BaseRepository {
   constructor(pool) {
-    super(pool, 'users');
+    super(pool, "users");
   }
 
   async createUser(data) {
     const now = new Date();
 
     const userData = {
-      id: uuidv4(),
+      id: data.id,
       display_name: data.display_name,
       full_name: data.full_name || null,
       avatar_url: data.avatar_url || null,
-      status: data.status || 'offline',
-      created_at: now,
-      updated_at: now
+      status: data.status || "offline",
+      created_at: data.created_at ? new Date(data.created_at) : now,
+      updated_at: now,
     };
 
     await super.create(userData);
@@ -42,14 +41,5 @@ export class UserRepository extends BaseRepository {
 
   async deleteUserById(id) {
     return super.deleteById(id);
-  }
-
-  async search({ query, country, interest }) {
-    const [rows] = await this.pool.query(
-      `CALL sp_search_users(?, ?, ?)`,
-      [query || null, country || null, interest || null]
-    );
-
-    return rows[0]?.map(row => new User(row)) || [];
   }
 }
