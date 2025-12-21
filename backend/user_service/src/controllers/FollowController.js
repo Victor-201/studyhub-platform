@@ -37,6 +37,26 @@ export class FollowController {
     }
   }
 
+  /** Danh sách followers */
+  async getFollowers({ params }, res) {
+    try {
+      const users = await this.followService.getFollowers(params.user_id);
+      res.json(users);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
+  /** Danh sách following */
+  async getFollowing({ params }, res) {
+    try {
+      const users = await this.followService.getFollowing(params.user_id);
+      res.json(users);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
   /** Get mutual friends */
   async getFriends({ params }, res) {
     try {
@@ -51,7 +71,10 @@ export class FollowController {
   async isFollowing({ query }, res) {
     try {
       const { follower_id, target_user_id } = query;
-      const result = await this.followService.isFollowing(follower_id, target_user_id);
+      const result = await this.followService.isFollowing(
+        follower_id,
+        target_user_id
+      );
       res.json({ isFollowing: result });
     } catch (err) {
       res.status(400).json({ error: err.message });

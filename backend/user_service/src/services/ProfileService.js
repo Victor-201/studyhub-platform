@@ -33,16 +33,40 @@ export class ProfileService {
    * @returns {Promise<Object>} - Object containing user, details, privacy, socialLinks, interests
    * @throws {Error} If user not found
    */
-  async getProfile(user_id) {
+  async getInfo(user_id) {
     const user = await this.userRepo.findById(user_id);
     if (!user) throw new Error("User not found");
+    return { user };
+  }
 
-    const details = await this.profileRepo.findByUserId(user_id);
-    const privacy = await this.privacyRepo.findByUserId(user_id);
-    const socialLinks = await this.socialRepo.findByUserId(user_id);
-    const interests = await this.interestsRepo.findByUserId(user_id);
+  /**
+   * @param {string} target_user_id - ID of the profile owner
+   * @param {string} viewer_id - ID of the viewer
+   * @returns {Promise<Object>} Profile result with ownership flag
+   * @throws {Error} If profile not found or not accessible
+   */
+  async getProfile({ target_user_id, viewer_id }) {
+    const isOwner = target_user_id === viewer_id;
 
-    return { user, details, privacy, socialLinks, interests };
+    if (isOwner) {
+      const profile = await this.profileRepo.findOwnerProfile(target_user_id);
+      if (!profile) throw new Error("User not found");
+
+      return {
+        isOwner: true,
+        profile,
+      };
+    }
+
+    const profile = await this.profileRepo.findPublicProfile(target_user_id);
+    if (!profile) {
+      throw new Error("Profile is private or not found");
+    }
+
+    return {
+      isOwner: false,
+      profile,
+    };
   }
 
   /**

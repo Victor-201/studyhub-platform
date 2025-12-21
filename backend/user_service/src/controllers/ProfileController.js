@@ -17,13 +17,27 @@ export class ProfileController {
     ];
   }
 
-  /** Get full profile */
-  async getProfile({ params }, res) {
+  /** Get info */
+  async getInfo({ params }, res) {
     try {
-      const profile = await this.profileService.getProfile(params.user_id);
+      const profile = await this.profileService.getInfo(params.user_id);
       res.json(profile);
     } catch (err) {
       res.status(400).json({ error: err.message });
+    }
+  }
+
+    /** Get full profile */
+  async getProfile(req, res) {
+    try {
+      const result = await this.profileService.getProfile({
+        target_user_id: req.params.user_id,
+        viewer_id: req.user.id,
+      });
+
+      res.json(result);
+    } catch (err) {
+      res.status(403).json({ error: err.message });
     }
   }
 

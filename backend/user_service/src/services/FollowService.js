@@ -35,9 +35,25 @@ export class FollowService {
    * @returns {Promise<{followers: number, following: number}>} - Object containing followers and following counts
    */
   async getFollowCounts(user_id) {
-    const followers = await this.followRepo.countFollowers(user_id);
-    const following = await this.followRepo.countFollowing(user_id);
-    return { followers, following };
+    return await this.followRepo.getFollowCounts(user_id);
+  }
+
+  /**
+   * Lấy danh sách user đang follow user_id
+   * @param {string} user_id - User ID
+   * @returns {Promise<Array<Object>>}
+   */
+  async getFollowers(user_id) {
+    return this.followRepo.getFollowers(user_id);
+  }
+
+  /**
+   * Lấy danh sách user mà user_id đang follow
+   * @param {string} user_id - User ID
+   * @returns {Promise<Array<Object>>}
+   */
+  async getFollowing(user_id) {
+    return this.followRepo.getFollowing(user_id);
   }
 
   /**
@@ -56,7 +72,10 @@ export class FollowService {
    * @returns {Promise<boolean>} - True if following, false otherwise
    */
   async isFollowing(follower_id, target_user_id) {
-    const record = await this.followRepo.findByFollowerAndTarget(follower_id, target_user_id);
+    const record = await this.followRepo.findByFollowerAndTarget(
+      follower_id,
+      target_user_id
+    );
     return !!record;
   }
 
@@ -68,9 +87,10 @@ export class FollowService {
    */
   async isFriend(user_a, user_b) {
     const friends = await this.followRepo.getFriends(user_a);
-    return friends.some(f => 
-      (f.user_a === user_a && f.user_b === user_b) || 
-      (f.user_a === user_b && f.user_b === user_a)
+    return friends.some(
+      (f) =>
+        (f.user_a === user_a && f.user_b === user_b) ||
+        (f.user_a === user_b && f.user_b === user_a)
     );
   }
 }
