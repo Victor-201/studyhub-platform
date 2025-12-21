@@ -6,9 +6,13 @@ import { DocumentInteractionsController } from "../controllers/DocumentInteracti
  * @param {Object} deps
  * @param {import("../services/DocumentInteractionsService.js").DocumentInteractionsService} deps.documentInteractionsService
  */
-export function createDocumentInteractionsRouter({ documentInteractionsService }) {
+export function createDocumentInteractionsRouter({
+  documentInteractionsService,
+}) {
   const router = express.Router();
-  const controller = new DocumentInteractionsController({ documentInteractionsService });
+  const controller = new DocumentInteractionsController({
+    interactionsService: documentInteractionsService,
+  });
 
   // --- Auth ---
   router.use(verifyAccessToken);
@@ -21,14 +25,19 @@ export function createDocumentInteractionsRouter({ documentInteractionsService }
 
   router.post("/:id/comments", controller.addComment.bind(controller));
 
+  router.get(
+    "/:id/comments",
+    controller.getCommentsByDocument.bind(controller)
+  );
+
+  router.get("/admin/comments", controller.getAllComments.bind(controller));
+
   router.delete(
     "/comments/:comment_id",
     controller.deleteComment.bind(controller)
   );
 
   router.post("/:id/download", controller.recordDownload.bind(controller));
-
-  router.get("/:id/stats", controller.stats.bind(controller));
 
   return router;
 }

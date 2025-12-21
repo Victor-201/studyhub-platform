@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import { verifyAccessToken } from "../middlewares/auth.js";
+import { requireRole } from "../middlewares/role.js";
 import { DocumentController } from "../controllers/DocumentController.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -13,9 +14,12 @@ export function createDocumentRouter({ documentService }) {
   const router = express.Router();
   const controller = new DocumentController({ documentService });
 
+  router.get("/feed/public", controller.getPublicFeed.bind(controller));
+
+  router.get("/tags", controller.getAllTags.bind(controller));
+  
   router.use(verifyAccessToken);
 
-  // Create
   router.post(
     "/",
     upload.single("file"),
@@ -24,14 +28,20 @@ export function createDocumentRouter({ documentService }) {
 
   router.get("/search", controller.search.bind(controller));
 
-  router.get("/feed/public", controller.getPublicFeed.bind(controller));
-  router.get("/feed/home", controller.getUserFeed.bind(controller));
+  router.get("/feed/home", controller.getHomeFeed.bind(controller));
 
   router.get("/me", controller.getMyDocuments.bind(controller));
 
   router.get(
     "/admin/approved",
+    requireRole("admin"),
     controller.getApprovedDocuments.bind(controller)
+  );
+
+  router.get(
+    "/admin/counts",
+    requireRole("admin"),
+    controller.count.bind(controller)
   );
 
   router.get(
