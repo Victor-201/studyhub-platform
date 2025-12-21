@@ -30,6 +30,10 @@ export const env = {
   GMAIL_USER: required("GMAIL_USER"),
 
   FRONTEND_URL: required("FRONTEND_URL"),
+
+  // ===== RabbitMQ =====
+  RABBITMQ_URL: required("RABBITMQ_URL"), 
+  RABBITMQ_EXCHANGE: process.env.RABBITMQ_EXCHANGE || "studyhub_exchange",
 };
 
 export default env;

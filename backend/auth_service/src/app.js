@@ -1,3 +1,4 @@
+// src/app.js
 import express from "express";
 import morgan from "morgan";
 import helmet from "helmet";
@@ -25,6 +26,7 @@ import { UserDeletionRepository } from "./repos/UserDeletionRepository.js";
 import { EmailTemplateRepository } from "./repos/EmailTemplateRepository.js";
 import { OAuthProviderRepository } from "./repos/OAuthProviderRepository.js";
 import { OAuthAccountRepository } from "./repos/OAuthAccountRepository.js";
+import OutboxRepository from "./repos/OutboxRepository.js";
 
 // Import services
 import { AuthService } from "./services/AuthService.js";
@@ -32,6 +34,7 @@ import { AdminService } from "./services/AdminService.js";
 import { OAuthService } from "./services/OAuthService.js";
 import { UserService } from "./services/UserService.js";
 import { EmailService } from "./services/EmailService.js";
+import OutboxService from "./services/OutboxService.js";
 
 export function createApp() {
   const app = express();
@@ -44,13 +47,13 @@ export function createApp() {
   app.use(bodyParser.urlencoded({ extended: true }));
 
   // Initialize Email Service
-const emailService = new EmailService({
-  user: env.GMAIL_USER,
-  clientId: env.CLIENT_ID,
-  clientSecret: env.CLIENT_SECRET,
-  redirectUri: env.REDIRECT_URI,
-  refreshToken: env.REFRESH_TOKEN,
-});
+  const emailService = new EmailService({
+    user: env.GMAIL_USER,
+    clientId: env.CLIENT_ID,
+    clientSecret: env.CLIENT_SECRET,
+    redirectUri: env.REDIRECT_URI,
+    refreshToken: env.REFRESH_TOKEN,
+  });
 
   // Initialize repositories
   const userRepo = new UserRepository(pool);
@@ -69,7 +72,11 @@ const emailService = new EmailService({
   const oAuthProviderRepo = new OAuthProviderRepository(pool);
   const oAuthAccountRepo = new OAuthAccountRepository(pool);
 
-  // Initialize services with dependencies
+  // Outbox repo + service (BẮT BUỘC)
+  const outboxRepo = new OutboxRepository(pool);
+  const outboxService = new OutboxService({ outboxRepo });
+
+  // Initialize services with dependencies (pass outboxRepo to AuthService)
   const authService = new AuthService({
     userRepo,
     userEmailRepo,
@@ -79,6 +86,7 @@ const emailService = new EmailService({
     auditRepo,
     userRoleRepo,
     roleRepo,
+    outboxRepo,         // <-- thêm ở đây
     emailService,
   });
 
@@ -119,7 +127,7 @@ const emailService = new EmailService({
   // Mount routers
   app.use(
     "/api/v1/auth",
-    createRoutes({ authService, adminService, oauthService, userService })
+    createRoutes({ authService, adminService, oauthService, userService, outboxService })
   );
 
   // Health check
