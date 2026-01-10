@@ -1,49 +1,40 @@
 @import "tailwindcss";
 
-/* =============================================
-   🎨 Bảng màu Blue Ocean - đồng bộ React Native
-   ============================================= */
 @theme {
-  /* === Màu chủ đạo (Blue tone) === */
-  --color-primary:   #002682;  /* màu chính */
-  --color-on-primary: #FFFFFF; /* chữ trên nền primary */
-  --color-secondary: #1E45B5;  /* xanh nhạt hơn primary */
-  --color-accent:    #4A6CFF;  /* điểm nhấn */
+  --color-primary: #002682;
+  --color-on-primary: #ffffff;
+  --color-secondary: #1e45b5;
+  --color-accent: #4a6cff;
 
-  /* === Màu nền & chữ === */
-  --color-background: #FFFFFF;
-  --color-surface:    #FFFFFF;
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
   --color-on-background: #000000;
-  --color-on-surface:   #000000;
+  --color-on-surface: #000000;
 
-  /* === Trạng thái === */
-  --color-error:   #f60d01;  /* lỗi */
-  --color-success: #86df20;  /* thành công */
-  --color-warning: #f2ae14;  /* cảnh báo */
+  --color-error: #de1c1c;
+  --color-success: #00b342;
+  --color-warning: #ff7c00;
 
-  /* === Thang màu thương hiệu (brand scale) === */
-  --color-brand-50:  #E5ECFF;
-  --color-brand-100: #B3C3FF;
-  --color-brand-200: #8099FF;
-  --color-brand-300: #4A6CFF;
-  --color-brand-400: #1E45B5;
+  --color-brand-50: #e5ecff;
+  --color-brand-100: #b3c3ff;
+  --color-brand-200: #8099ff;
+  --color-brand-300: #4a6cff;
+  --color-brand-400: #1e45b5;
   --color-brand-500: #002682;
-  --color-brand-600: #001F6B;
+  --color-brand-600: #001f6b;
   --color-brand-700: #001653;
 }
 
-/* =============================================
-   🌙 Dark mode (nếu có)
-   ============================================= */
+:root {
+  --header-height: 64px;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* =============================================
-   ✨ Cấu hình giao diện chung
-   ============================================= */
 body {
   @apply bg-[var(--color-background)] text-[var(--color-on-background)]
          dark:bg-[var(--color-brand-700)] dark:text-[var(--color-brand-50)];
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   line-height: 1.5;
   margin: 0;
   padding: 0;
@@ -61,12 +52,19 @@ button:not([data-plain]) {
   @apply px-4 py-2 rounded-lg 
          bg-[var(--color-primary)] text-[var(--color-on-primary)]
          hover:bg-[var(--color-secondary)]
-         transition-colors;
+         transition-colors
+         cursor-pointer;
+}
+
+button {
+  cursor: pointer;
 }
 
 /* Inputs */
-input, select, textarea:not([data-plain]) {
-  @apply border border-[var(--color-brand-200)] rounded-md px-3 py-2
+input,
+select,
+textarea:not([data-plain]) {
+  @apply border border-[var(--color-brand-200)] rounded-md
          focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]
          dark:border-[var(--color-brand-600)]
          dark:bg-[var(--color-brand-700)] dark:text-[var(--color-brand-50)];
@@ -78,9 +76,32 @@ input, select, textarea:not([data-plain]) {
   pointer-events: none;
 }
 
-/* Badge */
+/* Badge base */
 .badge {
-  @apply bg-[var(--color-accent)] text-black px-2 py-1 rounded-full text-sm font-semibold;
+  @apply inline-flex items-center justify-center
+         px-3 py-1 rounded-full
+         font-semibold text-sm
+         text-white
+         shadow-sm
+         transition-all duration-150 ease-in-out
+         whitespace-nowrap;
+}
+
+/* Severity */
+.badge--success {
+  @apply bg-[var(--color-success)];
+}
+
+.badge--warning {
+  @apply bg-[var(--color-warning)];
+}
+
+.badge--danger {
+  @apply bg-[var(--color-error)];
+}
+
+.badge--info {
+  @apply bg-[var(--color-brand-300)];
 }
 
 /* Card */
@@ -98,4 +119,85 @@ input, select, textarea:not([data-plain]) {
 }
 .alert-warning {
   @apply bg-[var(--color-warning)] text-black px-4 py-2 rounded-md;
+}
+
+button {
+  transition: background-color 0.2s ease, transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.container {
+  width: 100%;
+  background-color: var(--color-surface);
+  min-height: calc(100vh - var(--header-height) - 50px);
+  max-height: calc(100vh - var(--header-height) - 50px);
+  box-sizing: border-box;
+  padding: 16px;
+  overflow: auto;
+}
+
+.table-header-text {
+  width: 100%;
+  max-width: 100%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.table-cell-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-all;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.table-cell-text.expanded {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  word-break: break-word;
+}
+
+.action-table {
+  @apply inline-flex items-center justify-center gap-1
+         px-3 py-1.5 rounded-md
+         cursor-pointer
+         transition;
+}
+
+.action-table--success {
+  @apply text-[var(--color-success)]
+         hover:bg-green-50
+         dark:hover:bg-green-900/20;
+}
+
+.action-table--primary {
+  @apply text-[var(--color-secondary)]
+         hover:bg-[var(--color-brand-50)]
+         dark:hover:bg-[var(--color-brand-600)];
+}
+
+.action-table--danger {
+  @apply text-[var(--color-error)]
+         hover:bg-red-50
+         dark:hover:bg-red-900/20;
 }
