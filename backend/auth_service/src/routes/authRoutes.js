@@ -12,6 +12,7 @@ export function createAuthRouter({ authService }) {
   router.post("/refresh", controller.refresh.bind(controller));
   router.post("/forgot-password", controller.forgotPassword.bind(controller));
   router.post("/reset-password", controller.resetPassword.bind(controller));
+  router.post("/logout", verifyAccessToken, controller.logout.bind(controller));
 
   router.post("/change-password", verifyAccessToken, controller.changePassword.bind(controller));
   router.get("/me", verifyAccessToken, controller.me.bind(controller));

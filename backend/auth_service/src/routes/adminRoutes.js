@@ -11,16 +11,19 @@ export function createAdminRouter({ adminService }) {
 
   router.get("/users", controller.listUsers.bind(controller));
   router.get("/count/accounts", controller.countAccounts.bind(controller));
-  router.post("/users/:userId/lock", controller.lockUser.bind(controller));
-  router.post("/users/:userId/unlock", controller.unlockUser.bind(controller));
-  router.post("/users/:userId/block", controller.blockUser.bind(controller));
-  router.delete("/users/:userId", controller.softDeleteUser.bind(controller));
-  router.post("/users/:userId/restore", controller.restoreUser.bind(controller));
-  router.patch("/users/:userId/role", controller.updateRole.bind(controller));
+  router.post("/users/:user_id/lock", controller.lockUser.bind(controller));
+  router.post("/users/:user_id/unlock", controller.unlockUser.bind(controller));
+  router.get("/users/:user_id/is_blocked", controller.isUserBlocked.bind(controller));
+  router.post("/users/:user_id/block", controller.permanentBlockUser.bind(controller));
+  router.post("/users/:user_id/block", controller.temporaryBlockUser.bind(controller));
+  router.post("/users/:user_id/unblock", controller.unblockUser.bind(controller));
+  router.delete("/users/:user_id", controller.softDeleteUser.bind(controller));
+  router.post("/users/:user_id/restore", controller.restoreUser.bind(controller));
+  router.patch("/users/:user_id/role", controller.updateRole.bind(controller));
 
   router.get("/audit/logs", controller.getAuditLogs.bind(controller));
-  router.get("/audit/logs/actor/:actorUserId", controller.getAuditLogsByActor.bind(controller));
-  router.get("/audit/logs/target/:targetUserId", controller.getAuditLogsByTarget.bind(controller));
+  router.get("/audit/logs/actor/:actor_user_id", controller.getAuditLogsByActor.bind(controller));
+  router.get("/audit/logs/target/:target_user_id", controller.getAuditLogsByTarget.bind(controller));
 
   return router;
 }

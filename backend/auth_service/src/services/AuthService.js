@@ -43,6 +43,52 @@ export class AuthService {
   }
 
   /**
+   * Send verification email
+   * @param {Object} userEmail
+   * @param {string} userEmail.user_name
+   * @param {string} [user_agent]
+   * @param {string} [ip]
+   * @returns {Promise<string>} Verification token
+   */
+  async sendVerificationEmail(userEmail, user_agent = null, ip = null) {
+    if (!userEmail) throw new Error("User email required");
+
+    const existingTokens = await this.emailVerificationRepo.findByUserEmailId(
+      userEmail.id
+    );
+    for (const token of existingTokens) {
+      if (!token.used_at) {
+        await this.emailVerificationRepo.deleteToken(token.id);
+      }
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    await this.emailVerificationRepo.createToken({
+      id: uuidv4(),
+      user_email_id: userEmail.id,
+      token_hash: createTokenHash(token),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
+      ip,
+      user_agent,
+      created_at: new Date(),
+    });
+
+    await this.emailService.sendEmail({
+      to: userEmail.email,
+      subject: "Verify your StudyHub account",
+      html: `<p>Hello ${userEmail.user_name || ""},</p>
+           <p>Please verify your email by clicking the link below:</p>
+           <a href="${
+             process.env.FRONTEND_URL
+           }/auth/verify-email?token=${token}">Verify Email</a>
+           <p>This link will expire in 24 hours.</p>`,
+      from: "StudyHub <no-reply@studyhub.com>",
+    });
+
+    return token;
+  }
+
+  /**
    * Register a new user and send verification email
    * @param {Object} payload
    * @param {string} payload.user_name
@@ -61,7 +107,9 @@ export class AuthService {
     ip = null,
   }) {
     if (!user_name || !email || !password || !display_name)
-      throw new Error("Username, email, display name and password are required");
+      throw new Error(
+        "Username, email, display name and password are required"
+      );
 
     const existingUser = await this.userRepo.findByUserName(user_name);
     if (existingUser) throw new Error("Username already exists");
@@ -88,26 +136,11 @@ export class AuthService {
       created_at: new Date(),
     });
 
-    const token = crypto.randomBytes(32).toString("hex");
-    await this.emailVerificationRepo.create({
-      id: uuidv4(),
-      user_email_id: userEmail.id,
-      token_hash: createTokenHash(token),
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      ip,
+    const token = await this.sendVerificationEmail(
+      { ...userEmail, user_name: newUser.user_name },
       user_agent,
-      created_at: new Date(),
-    });
-
-    await this.emailService.sendEmail({
-      to: email,
-      subject: "Verify your StudyHub account",
-      html: `<p>Hello ${user_name},</p>
-             <p>Please verify your email by clicking the link below:</p>
-             <a href="${process.env.FRONTEND_URL}/auth/verify-email?token=${token}">Verify Email</a>
-             <p>This link will expire in 24 hours.</p>`,
-      from: "StudyHub <no-reply@studyhub.com>",
-    });
+      ip
+    );
 
     const defaultRole = await this.roleRepo.findByName("user");
     if (defaultRole) {
@@ -200,31 +233,53 @@ export class AuthService {
     // ======== FIND USER BY EMAIL ========
     if (email) {
       emailRow = await this.userEmailRepo.findByEmail(email);
-      if (!emailRow) throw new Error("Invalid credentials");
-      if (emailRow.is_verified === 0) throw new Error("Email not verified");
+      if (!emailRow) throw new Error("Email not found");
+
+      if (emailRow.is_verified === 0) {
+        await this.sendVerificationEmail(
+          { ...emailRow, user_name: user_name },
+          user_agent,
+          ip
+        );
+        throw new Error(
+          "Email not verified. A new verification email has been sent."
+        );
+      }
 
       user = await this.userRepo.findById(emailRow.user_id);
-      if (!user) throw new Error("Invalid credentials");
+      if (!user) throw new Error("User associated with email not found");
     }
 
     // ======== FIND USER BY USERNAME ========
     else {
       user = await this.userRepo.findByUserName(user_name);
-      if (!user) throw new Error("Invalid credentials");
+      if (!user) throw new Error("Username not found");
 
       const emails = await this.userEmailRepo.getUserEmails(user.id);
       emailRow = emails.find((e) => e.is_verified === 1);
 
-      if (!emailRow) throw new Error("Email not verified");
+      if (!emailRow) {
+        const primaryEmail = emails[0];
+        await this.sendVerificationEmail(
+          { ...primaryEmail, user_name: user.user_name },
+          user_agent,
+          ip
+        );
+        throw new Error(
+          "No verified email found. A verification email has been sent to your primary email."
+        );
+      }
     }
 
     // ======== PASSWORD VALIDATION ========
     const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) throw new Error("Invalid credentials");
+    if (!match) throw new Error("Password incorrect");
 
+    await this.userRepo.updateById(user.id, {
+      last_login_at: new Date(),
+    });
     // ======== GET USER ROLES ========
     const roleAssignments = await this.userRoleRepo.findByUserId(user.id);
-
     const roleNames = [];
     for (const ra of roleAssignments) {
       const role = await this.roleRepo.findById(ra.role_id);
@@ -238,7 +293,6 @@ export class AuthService {
       role: roleNames,
       primary_email: emailRow.email,
     });
-
     const refresh_token = signRefreshToken({ id: user.id });
 
     // ======== STORE SESSION ========
@@ -260,7 +314,7 @@ export class AuthService {
       created_at: new Date(),
     });
 
-    // ======== FINAL RETURN (THEO FORMAT YÊU CẦU) ========
+    // ======== FINAL RETURN ========
     return {
       user: {
         id: user.id,
@@ -396,6 +450,23 @@ export class AuthService {
       created_at: new Date(),
     });
 
+    return true;
+  }
+
+  /**
+   * Logout user by revoking refresh token
+   * @param {string} refresh_token
+   * @returns {Promise<boolean>}
+   */
+  async logout(refresh_token) {
+    const refresh_token_hash = createTokenHash(refresh_token);
+    const session = await this.sessionRepo.findByRefreshTokenHash(
+      refresh_token_hash
+    );
+    if (!session) {
+      throw new Error("Invalid refresh token");
+    }
+    await this.sessionRepo.revokeSession(session.id);
     return true;
   }
 

@@ -111,6 +111,17 @@ export class AuthController {
     }
   }
 
+  /** Logout user by revoking refresh token */
+  async logout(req, res) {
+    try {
+      const { refresh_token } = req.body;
+      await this.authService.logout(refresh_token);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
   /** Get logged-in user info */
   async me({ user }, res) {
     try {

@@ -61,6 +61,7 @@ export class OAuthService {
     if (existing_account) {
       const user = await this.userRepo.findById(existing_account.user_id);
       await this.auditRepo.logAction({
+        id: uuidv4(),
         actor_user_id: user.id,
         action: "OAUTH_LOGIN",
         created_at: new Date(),

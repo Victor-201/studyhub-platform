@@ -32,6 +32,39 @@ export class UserRepository extends BaseRepository {
     return rows.map((row) => new User(row));
   }
 
+  async findAllForAdmin() {
+    const [rows] = await this.pool.query(`
+    SELECT 
+      u.id,
+      u.user_name,
+      u.status,
+      u.last_login_at,
+      u.created_at,
+      u.updated_at,
+      ue.email AS primary_email,
+      GROUP_CONCAT(r.name) AS roles
+    FROM users u
+    LEFT JOIN user_emails ue 
+      ON ue.user_id = u.id AND ue.type = 'primary'
+    LEFT JOIN user_roles ur 
+      ON ur.user_id = u.id AND ur.revoked_at IS NULL
+    LEFT JOIN roles r 
+      ON r.id = ur.role_id
+    GROUP BY u.id, ue.email
+    ORDER BY u.created_at DESC
+  `);
+    return rows.map((row) => ({
+      id: row.id,
+      user_name: row.user_name,
+      status: row.status,
+      last_login_at: row.last_login_at,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      email: row.primary_email,
+      roles: row.roles ? row.roles.split(",") : [],
+    }));
+  }
+
   async create(data) {
     const row = await super.create(data);
     return new User(row);

@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { v4 as uuidv4 } from "uuid";
 
 export class AdminService {
   /**
@@ -43,7 +44,7 @@ export class AdminService {
    * @returns {Promise<Array>} List of users
    */
   async listUsers() {
-    return this.userRepo.findAll();
+    return this.userRepo.findAllForAdmin();
   }
 
   /**
@@ -65,8 +66,9 @@ export class AdminService {
    */
   async lockUser(user_id, admin_id) {
     if (!user_id || !admin_id) throw new Error("Missing parameters");
-    await this.userRepo.updateById(user_id, { status: "blocked" });
+    await this.userRepo.updateById(user_id, { status: "locked" });
     await this.auditRepo.logAction({
+      id: uuidv4(),
       actor_user_id: admin_id,
       target_user_id: user_id,
       action: "LOCK_USER",
@@ -85,6 +87,7 @@ export class AdminService {
     if (!user_id || !admin_id) throw new Error("Missing parameters");
     await this.userRepo.updateById(user_id, { status: "active" });
     await this.auditRepo.logAction({
+      id: uuidv4(),
       actor_user_id: admin_id,
       target_user_id: user_id,
       action: "UNLOCK_USER",
@@ -94,28 +97,101 @@ export class AdminService {
   }
 
   /**
-   * Block a user
+   * Check if user is blocked
+   * @param {string} user_id - User ID
+   * @returns {Promise<boolean>}
+   */
+  async isUserBlocked(user_id) {
+    if (!user_id) throw new Error("Missing user_id");
+    return await this.userBlockRepo.isUserBlocked(user_id);
+  }
+
+  /**
+   * Permanently block user
    * @param {string} user_id - User ID
    * @param {string} reason - Reason for blocking
    * @param {string} admin_id - Admin performing the action
    * @returns {Promise<boolean>}
    */
-  async blockUser(user_id, reason, admin_id) {
+  async permanentBlockUser(user_id, reason, admin_id) {
     if (!user_id || !reason || !admin_id) throw new Error("Missing parameters");
+
     await this.userBlockRepo.blockUser({
       id: crypto.randomUUID(),
       user_id,
       blocked_by: admin_id,
       reason,
+      is_permanent: true,
       created_at: new Date(),
-      is_permanent: false,
     });
+
+    await this.userRepo.updateById(user_id, { status: "blocked" });
+
     await this.auditRepo.logAction({
+      id: uuidv4(),
       actor_user_id: admin_id,
       target_user_id: user_id,
-      action: "BLOCK_USER",
+      action: "BLOCK_USER_PERMANENT",
       created_at: new Date(),
     });
+
+    return true;
+  }
+
+  /**
+   * Unblock a user
+   * @param {string} user_id
+   * @param {string} admin_id
+   */
+  async unblockUser(user_id, admin_id) {
+    if (!user_id || !admin_id) throw new Error("Missing parameters");
+
+    await this.userBlockRepo.liftAllBlocksByUser(user_id);
+    await this.userRepo.updateById(user_id, { status: "active" });
+
+    await this.auditRepo.logAction({
+      id: uuidv4(),
+      actor_user_id: admin_id,
+      target_user_id: user_id,
+      action: "UNBLOCK_USER",
+      created_at: new Date(),
+    });
+
+    return true;
+  }
+
+  /**
+   * Block user with expiration
+   * @param {string} user_id - User ID
+   * @param {string} reason - Reason for blocking
+   * @param {string} admin_id - Admin performing the action
+   * @param {Date} blocked_until - Block expiration date
+   * @returns {Promise<boolean>}
+   */
+  async blockUserWithDuration(user_id, reason, admin_id, blocked_until) {
+    if (!user_id || !reason || !admin_id || !blocked_until)
+      throw new Error("Missing parameters");
+
+    await this.userBlockRepo.blockUser({
+      id: crypto.randomUUID(),
+      user_id,
+      blocked_by: admin_id,
+      reason,
+      blocked_until,
+      is_permanent: false,
+      created_at: new Date(),
+    });
+
+    await this.userRepo.updateById(user_id, { status: "blocked" });
+
+    await this.auditRepo.logAction({
+      id: uuidv4(),
+      actor_user_id: admin_id,
+      target_user_id: user_id,
+      action: "BLOCK_USER_TEMP",
+      created_at: new Date(),
+    });
+
     return true;
   }
 
@@ -137,6 +213,7 @@ export class AdminService {
     });
     await this.userRepo.updateById(user_id, { status: "deleted" });
     await this.auditRepo.logAction({
+      id: uuidv4(),
       actor_user_id: admin_id,
       target_user_id: user_id,
       action: "SOFT_DELETE_USER",
@@ -162,6 +239,7 @@ export class AdminService {
     }
     await this.userRepo.updateById(user_id, { status: "active" });
     await this.auditRepo.logAction({
+      id: uuidv4(),
       actor_user_id: admin_id,
       target_user_id: user_id,
       action: "RESTORE_USER",
@@ -189,6 +267,7 @@ export class AdminService {
       assigned_at: new Date(),
     });
     await this.auditRepo.logAction({
+      id: uuidv4(),
       actor_user_id: admin_id,
       target_user_id: user_id,
       action: "UPDATE_ROLE",

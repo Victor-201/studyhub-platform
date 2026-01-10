@@ -50,13 +50,60 @@ export class AdminController {
     }
   }
 
-  /** Block a user permanently or temporarily */
-  async blockUser(req, res) {
+  /** Check if a user is blocked */
+  async isUserBlocked(req, res) {
+    try {
+      const { user_id } = req.params;
+      const isBlocked = await this.adminService.isUserBlocked(user_id);
+      res.json({ isBlocked });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
+  /** Block user permanently */
+  async permanentBlockUser(req, res) {
     try {
       const { user_id } = req.params;
       const { reason } = req.body;
       const admin_id = req.user.id;
-      await this.adminService.blockUser(user_id, reason, admin_id);
+
+      await this.adminService.permanentBlockUser(user_id, reason, admin_id);
+
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
+  /** Block user temporarily */
+  async temporaryBlockUser(req, res) {
+    try {
+      const { user_id } = req.params;
+      const { reason, blocked_until } = req.body;
+      const admin_id = req.user.id;
+
+      await this.adminService.blockUserWithDuration(
+        user_id,
+        reason,
+        admin_id,
+        new Date(blocked_until)
+      );
+
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
+  /** Unblock user */
+  async unblockUser(req, res) {
+    try {
+      const { user_id } = req.params;
+      const admin_id = req.user.id;
+
+      await this.adminService.unblockUser(user_id, admin_id);
+
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ error: err.message });
