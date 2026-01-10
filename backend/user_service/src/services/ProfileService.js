@@ -165,19 +165,73 @@ export class ProfileService {
    * @param {string} [filters.interest] - Interest filter
    * @returns {Promise<Array<Object>>} - Array of matched users
    */
-  async searchUsers({ query, country, interest }) {
-    return this.userRepo.search({ query, country, interest });
+  async searchUsers({ keyword, limit = 5, offset = 0 }) {
+    const rows = await this.userRepo.searchByKeyword(keyword, limit, offset);
+
+    if (!rows || rows.length === 0) return [];
+
+    return rows.map((row) => ({
+      id: row.user_id,
+      display_name: row.display_name,
+      full_name: row.full_name,
+      avatar_url: row.avatar_url,
+      status: row.status,
+      country: row.country,
+      city: row.city,
+      bio: row.bio,
+      gender: row.gender,
+      birthday: row.birthday,
+    }));
   }
 
   /**
-   * Add a social link for a user
-   * @param {string} user_id - ID of the user
-   * @param {string} platform - Platform name (e.g., Twitter, LinkedIn)
-   * @param {string} url - URL of the social profile
-   * @returns {Promise<Object>} - Created or updated social link
+   * Add or update a social link for a user
+   * @param {string} user_id
+   * @param {string} url
    */
-  async addSocialLink(user_id, platform, url) {
-    return this.socialRepo.upsert({
+  async addSocialLink(user_id, url) {
+    if (!url) {
+      throw new Error("Social link URL is required");
+    }
+
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      throw new Error("Invalid URL format");
+    }
+
+    const host = parsedUrl.hostname.toLowerCase();
+
+    const PLATFORM_MAP = {
+      github: ["github.com"],
+      linkedin: ["linkedin.com"],
+      twitter: ["twitter.com", "x.com"],
+      facebook: ["facebook.com"],
+      instagram: ["instagram.com"],
+      youtube: ["youtube.com", "youtu.be"],
+      tiktok: ["tiktok.com"],
+      medium: ["medium.com"],
+    };
+
+    const platform = Object.entries(PLATFORM_MAP).find(([_, domains]) =>
+      domains.some((d) => host.includes(d))
+    )?.[0];
+
+    if (!platform) {
+      throw new Error("Unsupported social media platform");
+    }
+
+    const existing = await this.socialRepo.findByUserAndPlatform(
+      user_id,
+      platform
+    );
+
+    if (existing) {
+      return this.socialRepo.updateLink(existing.id, { url });
+    }
+
+    return this.socialRepo.createLink({
       id: uuidv4(),
       user_id,
       platform,
@@ -191,7 +245,7 @@ export class ProfileService {
    * @returns {Promise<number>} - Number of records deleted
    */
   async removeSocialLink(id) {
-    return this.socialRepo.deleteById(id);
+    return this.socialRepo.deleteLink(id);
   }
 
   /**

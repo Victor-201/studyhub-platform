@@ -1,9 +1,9 @@
-import {BaseRepository} from './BaseRepository.js';
-import UserPrivacySettings from '../models/UserPrivacySettings.js';
+import { BaseRepository } from "./BaseRepository.js";
+import UserPrivacySettings from "../models/UserPrivacySettings.js";
 
 export class UserPrivacySettingsRepository extends BaseRepository {
   constructor(pool) {
-    super(pool, 'user_privacy_settings');
+    super(pool, "user_privacy_settings");
   }
 
   async createSettings(data) {
@@ -29,25 +29,25 @@ export class UserPrivacySettingsRepository extends BaseRepository {
   }
 
   async upsert(settings) {
-    const s = settings instanceof UserPrivacySettings
-      ? settings.toPlainObject()
-      : settings;
+    const s =
+      settings instanceof UserPrivacySettings
+        ? settings.toPlainObject()
+        : settings;
 
-    await this.pool.query(
-      `CALL sp_upsert_privacy(?,?,?,?,?,?,?,?,?,?)`,
-      [
-        s.user_id,
-        s.show_full_name,
-        s.show_bio,
-        s.show_gender,
-        s.show_birthday,
-        s.show_location,
-        s.show_avatar,
-        s.show_profile,
-        s.allow_messages,
-        s.allow_tagging,
-      ]
-    );
+    const allowMessages = s.allow_messages ?? "everyone";
+
+    await this.pool.query(`CALL sp_upsert_privacy(?,?,?,?,?,?,?,?,?,?)`, [
+      s.user_id,
+      s.show_full_name ?? 1,
+      s.show_bio ?? 1,
+      s.show_gender ?? 1,
+      s.show_birthday ?? 0,
+      s.show_location ?? 1,
+      s.show_avatar ?? 1,
+      s.show_profile ?? 1,
+      allowMessages,
+      s.allow_tagging ?? 1,
+    ]);
 
     return this.findByUserId(s.user_id);
   }

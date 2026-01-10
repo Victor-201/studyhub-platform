@@ -11,10 +11,7 @@ export class ProfileController {
     this.profileService = profileService;
 
     // Bind middleware để upload avatar
-    this.updateAvatar = [
-      upload.single('avatar'),
-      this.updateAvatar.bind(this)
-    ];
+    this.updateAvatar = [upload.single("avatar"), this.updateAvatar.bind(this)];
   }
 
   /** Get info */
@@ -27,7 +24,7 @@ export class ProfileController {
     }
   }
 
-    /** Get full profile */
+  /** Get full profile */
   async getProfile(req, res) {
     try {
       const result = await this.profileService.getProfile({
@@ -44,7 +41,10 @@ export class ProfileController {
   /** Update core profile info and details */
   async updateProfile({ params, body }, res) {
     try {
-      const updated = await this.profileService.updateProfile(params.user_id, body);
+      const updated = await this.profileService.updateProfile(
+        params.user_id,
+        body
+      );
       res.json(updated);
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -55,7 +55,10 @@ export class ProfileController {
   async updateAvatar({ params, file }, res) {
     try {
       if (!file) throw new Error("No avatar file uploaded");
-      const updated = await this.profileService.updateAvatar(params.user_id, file.buffer);
+      const updated = await this.profileService.updateAvatar(
+        params.user_id,
+        file.buffer
+      );
       res.json(updated);
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -75,27 +78,40 @@ export class ProfileController {
   /** Update privacy settings */
   async updatePrivacy({ params, body }, res) {
     try {
-      const updated = await this.profileService.updatePrivacy(params.user_id, body);
+      const updated = await this.profileService.updatePrivacy(
+        params.user_id,
+        body
+      );
       res.json(updated);
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
   }
 
-  /** Search users by query/country/interest */
-  async searchUsers({ query }, res) {
+  async searchUsers(req, res) {
     try {
-      const users = await this.profileService.searchUsers(query);
-      res.json(users);
+      const { query, limit, offset } = req.query;
+
+      const users = await this.profileService.searchUsers({
+        keyword: query,
+        limit: Number(limit) || 5,
+        offset: Number(offset) || 0,
+      });
+
+      return res.json(users);
     } catch (err) {
-      res.status(400).json({ error: err.message });
+      console.error("Search error:", err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   }
-
+  
   /** Add a social link */
   async addSocialLink({ params, body }, res) {
     try {
-      const updated = await this.profileService.addSocialLink(params.user_id, body.platform, body.url);
+      const updated = await this.profileService.addSocialLink(
+        params.user_id,
+        body.url
+      );
       res.json(updated);
     } catch (err) {
       res.status(400).json({ error: err.message });

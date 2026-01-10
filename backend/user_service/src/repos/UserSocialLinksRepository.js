@@ -1,19 +1,19 @@
-import {BaseRepository} from './BaseRepository.js';
-import UserSocialLinks from '../models/UserSocialLinks.js';
+import { BaseRepository } from "./BaseRepository.js";
+import UserSocialLinks from "../models/UserSocialLinks.js";
 
 export class UserSocialLinksRepository extends BaseRepository {
   constructor(pool) {
-    super(pool, 'user_social_links');
+    super(pool, "user_social_links");
   }
 
   async createLink(data) {
-    const id = await super.create(data);
-    return this.findById(id);
+    await super.create(data);
+    return this.findById(data.id);
   }
 
   async findById(id) {
     const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.table} WHERE id = ?`,
+      `SELECT * FROM ${this.table} WHERE id = ? LIMIT 1`,
       [id]
     );
 
@@ -22,11 +22,24 @@ export class UserSocialLinksRepository extends BaseRepository {
 
   async findByUserId(user_id) {
     const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.table} WHERE user_id = ? ORDER BY created_at DESC`,
+      `SELECT * FROM ${this.table}
+       WHERE user_id = ?
+       ORDER BY created_at DESC`,
       [user_id]
     );
 
     return rows.map(row => new UserSocialLinks(row));
+  }
+
+  async findByUserAndPlatform(user_id, platform) {
+    const [rows] = await this.pool.query(
+      `SELECT * FROM ${this.table}
+       WHERE user_id = ? AND platform = ?
+       LIMIT 1`,
+      [user_id, platform]
+    );
+
+    return rows.length ? new UserSocialLinks(rows[0]) : null;
   }
 
   async updateLink(id, data) {
