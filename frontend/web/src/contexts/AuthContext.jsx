@@ -7,6 +7,7 @@ export const AuthContext = createContext({
   refreshToken: null,
   loading: true,
   login: async () => {},
+  oauthLogin: async () => {},
   logout: async () => {},
   register: async () => {},
   verify: async () => {},

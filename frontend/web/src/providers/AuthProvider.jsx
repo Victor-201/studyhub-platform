@@ -16,6 +16,11 @@ const decodeJWT = (token) => {
   }
 };
 
+const extractTokens = (data) => ({
+  access: data.access_token || data.accessToken,
+  refresh: data.refresh_token || data.refreshToken,
+});
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
@@ -41,7 +46,6 @@ export const AuthProvider = ({ children }) => {
       setRefreshToken(refresh);
     }
 
-    // Nếu logout => xóa
     if (!access && !refresh) {
       localStorage.removeItem(ACCESS_TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
@@ -50,31 +54,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ===== Convert role array -> string =====
-  const normalizeRole = (role) => {
-    if (Array.isArray(role)) return role[0];
-    return role;
-  };
+  const normalizeRole = (role) => (Array.isArray(role) ? role[0] : role);
 
   // ===== Refresh tokens =====
   const refreshTokens = useCallback(async () => {
     if (!refreshToken || isRefreshing) return null;
 
     setIsRefreshing(true);
-
     try {
       const res = await authService.refreshToken({
         refresh_token: refreshToken,
       });
 
       const data = res?.data ?? res;
+      persistTokens(data.access_token, data.refresh_token);
 
-      const newAccess = data?.access_token;
-      const newRefresh = data?.refresh_token;
-
-      persistTokens(newAccess, newRefresh);
-
-      const decoded = decodeJWT(newAccess);
+      const decoded = decodeJWT(data.access_token);
       if (decoded) {
         setUser({
           id: decoded.id,
@@ -96,39 +91,71 @@ export const AuthProvider = ({ children }) => {
 
   // ===== LOGIN =====
   const login = async (payload) => {
-    const res = await authService.login(payload);
-    const data = res?.data ?? res;
-
-    persistTokens(data.access_token, data.refresh_token);
-
-    setUser({
-      ...data.user,
-      role: normalizeRole(data.user.role),
-    });
-
-    return data;
-  };
-
-  const register = async (payload) => {
-    const res = await authService.register(payload);
-    return res?.data ?? res;
-  };
-
-  // ===== LOGOUT =====
-  const logout = async () => {
     try {
-      await authService.logout().catch(() => {});
-    } finally {
-      persistTokens(null, null);
-      setUser(null);
+      const res = await authService.login(payload);
+      const data = res?.data ?? res;
+
+      persistTokens(data.access_token, data.refresh_token);
+      setUser({
+        ...data.user,
+        role: normalizeRole(data.user.role),
+      });
+
+      return data;
+    } catch (err) {
+      throw err;
     }
   };
 
-  // ===== Auto load user when reload =====
+  // ===== OAUTH LOGIN =====
+  const oauthLogin = async (payload) => {
+    try {
+      const res = await authService.oauthLogin(payload);
+      const data = res?.data ?? res;
+
+      const { access, refresh } = extractTokens(data);
+      persistTokens(access, refresh);
+
+      setUser({
+        ...data.user,
+        role: normalizeRole(data.user.role),
+      });
+
+      return data;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  // ===== REGISTER (FIX CHÍNH) =====
+  const register = async (payload) => {
+    try {
+      const res = await authService.register(payload);
+      return res?.data ?? res;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      const refresh_token = localStorage.getItem("refresh_token");
+      if (refresh_token) {
+        await authService.logout(refresh_token);
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      persistTokens(null, null);
+      setUser(null);
+      localStorage.removeItem("refresh_token");
+    }
+  };
+
+  // ===== Auto load user =====
   useEffect(() => {
     if (accessToken) {
       const decoded = decodeJWT(accessToken);
-
       if (decoded) {
         setUser({
           id: decoded.id,
@@ -183,6 +210,7 @@ export const AuthProvider = ({ children }) => {
         refreshToken,
         loading,
         login,
+        oauthLogin,
         register,
         logout,
         refreshTokens,
