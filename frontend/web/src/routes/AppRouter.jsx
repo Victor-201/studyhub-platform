@@ -17,6 +17,7 @@ import Group from "../pages/user/Group";
 import GroupDetail from "../pages/user/GroupDetail";
 import Profile from "../pages/user/Profile";
 import Follow from "../pages/user/Follow";
+import Message from "../pages/user/Message";
 
 import Dashboard from "../pages/admin/Dashboard";
 import UsersAdmin from "../pages/admin/UsersAdmin";
@@ -60,9 +61,9 @@ export default function AppRouter() {
           <Route
             path="documents/:document_id"
             element={
-              <PublicRoute>
+              <PrivateRoute roles={["user", "admin"]}>
                 <DocumentDetail />
-              </PublicRoute>
+              </PrivateRoute>
             }
           />
 
@@ -96,6 +97,14 @@ export default function AppRouter() {
             element={
               <PrivateRoute roles={["user", "admin"]}>
                 <Follow />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="message"
+            element={
+              <PrivateRoute roles={["user", "admin"]}>
+                <Message />
               </PrivateRoute>
             }
           />
