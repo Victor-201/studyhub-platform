@@ -1,9 +1,7 @@
 CREATE DATABASE IF NOT EXISTS user_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE user_db;
 
--- ==================================================================
 -- Table: users (core profile)
--- ==================================================================
 CREATE TABLE users (
   id CHAR(36) PRIMARY KEY,
   display_name VARCHAR(128) NOT NULL,
@@ -17,9 +15,7 @@ CREATE TABLE users (
   INDEX idx_status (status)
 ) ENGINE=InnoDB;
 
--- ==================================================================
 -- Table: user_profile_details (extended profile)
--- ==================================================================
 CREATE TABLE user_profile_details (
   user_id CHAR(36) PRIMARY KEY,
   bio TEXT DEFAULT NULL,
@@ -34,9 +30,7 @@ CREATE TABLE user_profile_details (
   INDEX idx_city (city)
 ) ENGINE=InnoDB;
 
--- ==================================================================
 -- Table: user_privacy_settings (combine privacy + visibility)
--- ==================================================================
 CREATE TABLE user_privacy_settings (
   user_id CHAR(36) PRIMARY KEY,
   show_full_name TINYINT(1) NOT NULL DEFAULT 1,
@@ -53,9 +47,7 @@ CREATE TABLE user_privacy_settings (
   CONSTRAINT fk_priv_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ==================================================================
 -- Table: user_follows (follow 1 chiều; mutual follow = friend)
--- ==================================================================
 CREATE TABLE user_follows (
   follower_id CHAR(36) NOT NULL,
   target_user_id CHAR(36) NOT NULL,
@@ -68,9 +60,7 @@ CREATE TABLE user_follows (
   INDEX idx_follower_target (follower_id, target_user_id)
 ) ENGINE=InnoDB;
 
--- ==================================================================
 -- Table: user_social_links
--- ==================================================================
 CREATE TABLE user_social_links (
   id CHAR(36) PRIMARY KEY,
   user_id CHAR(36) NOT NULL,
@@ -83,9 +73,7 @@ CREATE TABLE user_social_links (
   INDEX idx_platform (platform)
 ) ENGINE=InnoDB;
 
--- ==================================================================
 -- Table: user_interests
--- ==================================================================
 CREATE TABLE user_interests (
   id CHAR(36) PRIMARY KEY,
   user_id CHAR(36) NOT NULL,
@@ -96,9 +84,7 @@ CREATE TABLE user_interests (
   INDEX idx_interest (interest)
 ) ENGINE=InnoDB;
 
--- ==================================================================
 -- Table: incoming_events
--- ==================================================================
 CREATE TABLE incoming_events (
   id CHAR(36) PRIMARY KEY,
   event_source VARCHAR(64) NOT NULL,
@@ -109,9 +95,7 @@ CREATE TABLE incoming_events (
   UNIQUE KEY uq_event (event_source, id)
 ) ENGINE=InnoDB;
 
--- ==================================================================
 -- View: public_user_view (respect privacy flags)
--- ==================================================================
 CREATE OR REPLACE VIEW public_user_view AS
 SELECT
   u.id AS user_id,
@@ -129,9 +113,7 @@ LEFT JOIN user_profile_details upd ON upd.user_id = u.id
 LEFT JOIN user_privacy_settings ups ON ups.user_id = u.id
 WHERE ups.show_profile = 1;
 
--- ==================================================================
 -- Stored procedures: search users & upsert privacy
--- ==================================================================
 DELIMITER $$
 CREATE PROCEDURE sp_search_users (
   IN p_query VARCHAR(256),
@@ -177,9 +159,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- ==================================================================
 -- Trigger example: prevent self-follow
--- ==================================================================
 DROP TRIGGER IF EXISTS trg_user_follows_prevent_self;
 DELIMITER $$
 CREATE TRIGGER trg_user_follows_prevent_self
@@ -192,9 +172,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- ==================================================================
 -- View: user_friends (mutual follow derived view)
--- ==================================================================
 CREATE OR REPLACE VIEW user_friends AS
 SELECT 
   LEAST(f1.follower_id, f1.target_user_id) AS user_a,

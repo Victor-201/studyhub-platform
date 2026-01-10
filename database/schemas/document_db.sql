@@ -3,15 +3,14 @@ CHARACTER SET utf8mb4
 COLLATE utf8mb4_general_ci;
 USE document_db;
 
--- ==================================================================
 -- Table: documents
--- ==================================================================
 CREATE TABLE documents (
     id CHAR(36) PRIMARY KEY,
     owner_id CHAR(36) NOT NULL,
     title VARCHAR(256) NOT NULL,
     description TEXT DEFAULT NULL,
     visibility ENUM('PUBLIC','PRIVATE','GROUP') NOT NULL DEFAULT 'PUBLIC',
+    file_name TEXT NOT NULL,
     storage_path TEXT NOT NULL,
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
@@ -20,9 +19,7 @@ CREATE TABLE documents (
     INDEX idx_visibility (visibility)
 );
 
--- ==================================================================
 -- Table: document_tags
--- ==================================================================
 CREATE TABLE document_tags (
     document_id CHAR(36) NOT NULL,
     tag VARCHAR(64) NOT NULL,
@@ -34,9 +31,7 @@ CREATE TABLE document_tags (
         FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
 );
 
--- ==================================================================
 -- Table: document_bookmarks
--- ==================================================================
 CREATE TABLE document_bookmarks (
     document_id CHAR(36) NOT NULL,
     user_id CHAR(36) NOT NULL,
@@ -49,9 +44,7 @@ CREATE TABLE document_bookmarks (
         FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
 );
 
--- ==================================================================
 -- Table: document_comments
--- ==================================================================
 CREATE TABLE document_comments (
     id CHAR(36) PRIMARY KEY,
     document_id CHAR(36) NOT NULL,
@@ -72,24 +65,23 @@ CREATE TABLE document_comments (
     INDEX idx_parent_comment (parent_comment_id)
 );
 
--- ==================================================================
 -- Table: document_downloads
--- ==================================================================
 CREATE TABLE document_downloads (
+    id CHAR(36) PRIMARY KEY,
     document_id CHAR(36) NOT NULL,
     user_id CHAR(36) NOT NULL,
     downloaded_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 
-    PRIMARY KEY (document_id, user_id),
     INDEX idx_user_downloads (user_id),
+    INDEX idx_document_user (document_id, user_id),
 
-    CONSTRAINT fk_downloads_document 
-        FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
+    CONSTRAINT fk_downloads_document
+    FOREIGN KEY (document_id)
+    REFERENCES documents(id)
+    ON DELETE CASCADE
 );
 
--- ==================================================================
 -- Table: group_documents
--- ==================================================================
 CREATE TABLE group_documents (
     id CHAR(36) PRIMARY KEY,
 
@@ -115,9 +107,7 @@ CREATE TABLE group_documents (
     UNIQUE KEY uq_group_doc (group_id, document_id)
 );
 
--- ==================================================================
 -- Table: outbox_events
--- ==================================================================
 CREATE TABLE outbox_events (
     id CHAR(36) PRIMARY KEY,
 
@@ -136,9 +126,7 @@ CREATE TABLE outbox_events (
     INDEX idx_status_created_at (status, created_at)
 );
 
--- ==================================================================
 -- Table: incoming_events
--- ==================================================================
 CREATE TABLE incoming_events (
     id CHAR(36) PRIMARY KEY,
 

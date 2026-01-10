@@ -5,7 +5,7 @@ CREATE TABLE users (
   id CHAR(36) PRIMARY KEY,
   user_name VARCHAR(64) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  status ENUM('active','blocked','deleted') NOT NULL DEFAULT 'active',
+  status ENUM('active','blocked','locked','deleted') NOT NULL DEFAULT 'active',
   last_login_at DATETIME(6) NULL,
   created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)

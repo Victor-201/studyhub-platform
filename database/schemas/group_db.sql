@@ -3,9 +3,7 @@ CHARACTER SET utf8mb4
 COLLATE utf8mb4_general_ci;
 USE `group_db`;
 
--- ==================================================================
 -- Table: groups
--- ==================================================================
 CREATE TABLE `groups` (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(128) NOT NULL,
@@ -19,9 +17,7 @@ CREATE TABLE `groups` (
     INDEX idx_access (access)
 ) ENGINE=InnoDB;
 
--- ==================================================================
 -- Table: group_members
--- ==================================================================
 CREATE TABLE `group_members` (
     group_id CHAR(36) NOT NULL,
     user_id CHAR(36) NOT NULL,
@@ -33,9 +29,7 @@ CREATE TABLE `group_members` (
     INDEX idx_user_group (user_id)
 ) ENGINE=InnoDB;
 
--- ==================================================================
 -- Table: group_join_requests
--- ==================================================================
 CREATE TABLE `group_join_requests` (
     id CHAR(36) PRIMARY KEY,
     group_id CHAR(36) NOT NULL,
@@ -48,9 +42,7 @@ CREATE TABLE `group_join_requests` (
     UNIQUE KEY uq_group_user_request (group_id, user_id)
 ) ENGINE=InnoDB;
 
--- ==================================================================
 -- Table: group_activity_logs
--- ==================================================================
 CREATE TABLE `group_activity_logs` (
     id CHAR(36) PRIMARY KEY,
     group_id CHAR(36) NOT NULL,
@@ -64,9 +56,7 @@ CREATE TABLE `group_activity_logs` (
     INDEX idx_actor (actor_id)
 ) ENGINE=InnoDB;
 
--- ==================================================================
 -- OUTBOX / INCOMING EVENTS
--- ==================================================================
 CREATE TABLE `outbox_events` (
     id CHAR(36) PRIMARY KEY,
     aggregate_type VARCHAR(64) NOT NULL,
