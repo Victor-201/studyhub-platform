@@ -34,12 +34,58 @@ export default class GroupJoinRequestRepository extends BaseRepository {
   }
 
   async listPending(group_id, { limit = 50, offset = 0 } = {}) {
+    limit = Math.max(1, Number(limit) || 50);
+    offset = Math.max(0, Number(offset) || 0);
+
     const [rows] = await this.pool.query(
-      `SELECT * FROM group_join_requests
-       WHERE group_id=? AND status='PENDING'
-       ORDER BY requested_at ASC LIMIT ? OFFSET ?`,
+      `SELECT *
+       FROM group_join_requests
+       WHERE group_id = ?
+         AND status = 'PENDING'
+       ORDER BY requested_at ASC
+       LIMIT ? OFFSET ?`,
       [group_id, limit, offset]
     );
-    return rows.map(r => new GroupJoinRequest(r));
+
+    return rows.map((r) => new GroupJoinRequest(r));
+  }
+  async listInvitesByUser(user_id, { limit = 50, offset = 0 } = {}) {
+    limit = Math.max(1, Number(limit) || 50);
+    offset = Math.max(0, Number(offset) || 0);
+
+    const [rows] = await this.pool.query(
+      `SELECT *
+       FROM group_join_requests
+       WHERE user_id = ?
+         AND status = 'INVITED'
+       ORDER BY requested_at DESC
+       LIMIT ? OFFSET ?`,
+      [user_id, limit, offset]
+    );
+
+    return rows.map((r) => new GroupJoinRequest(r));
+  }
+  async countPending(group_id) {
+    const [rows] = await this.pool.query(
+      `SELECT COUNT(*) AS total
+       FROM group_join_requests
+       WHERE group_id = ?
+         AND status = 'PENDING'`,
+      [group_id]
+    );
+
+    return rows[0].total;
+  }
+
+  async countInvitesByUser(user_id) {
+    const [rows] = await this.pool.query(
+      `SELECT COUNT(*) AS total
+       FROM group_join_requests
+       WHERE user_id = ?
+         AND status = 'INVITED'`,
+      [user_id]
+    );
+
+    return rows[0].total;
   }
 }

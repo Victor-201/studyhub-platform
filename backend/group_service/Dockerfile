@@ -1,14 +1,14 @@
-# Dockerfile for Group Service
-FROM node:20-alpine
-
+FROM node:20-alpine AS builder
 WORKDIR /app
-
-COPY package.json yarn.lock ./
-
+RUN corepack enable
+COPY package.json ./
 RUN yarn install --frozen-lockfile
-
 COPY . .
 
+FROM node:20-alpine
+WORKDIR /app
+RUN corepack enable
+COPY --from=builder /app .
+ENV NODE_ENV=production
 EXPOSE 3002
-
-CMD ["yarn", "dev"]
+CMD ["node", "src/index.js"]

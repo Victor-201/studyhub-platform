@@ -208,6 +208,47 @@ export class GroupController {
     }
   }
 
+  async listJoinRequests(req, res) {
+    try {
+      const { group_id } = req.params;
+      const { limit, offset } = req.query;
+
+      const limitNum = Number(limit) || 50;
+      const offsetNum = Number(offset) || 0;
+
+      const result = await this.groupService.listJoinRequests(group_id, {
+        limit: limitNum,
+        offset: offsetNum,
+      });
+
+      res.json({ success: true, data: result });
+    } catch (err) {
+      res
+        .status(err.status || 500)
+        .json({ success: false, message: err.message });
+    }
+  }
+  async listMyInvites(req, res) {
+    try {
+      const user_id = req.user.id;
+      const { limit, offset } = req.query;
+
+      const limitNum = Number(limit) || 50;
+      const offsetNum = Number(offset) || 0;
+
+      const result = await this.groupService.listMyInvites(user_id, {
+        limit: limitNum,
+        offset: offsetNum,
+      });
+
+      res.json({ success: true, data: result });
+    } catch (err) {
+      res
+        .status(err.status || 500)
+        .json({ success: false, message: err.message });
+    }
+  }
+
   // ADMIN
   async countGroups(req, res) {
     try {
@@ -219,19 +260,22 @@ export class GroupController {
         .json({ success: false, message: err.message });
     }
   }
-  
-  async getAllGroups(req, res) {  
+
+  async getAllGroups(req, res) {
     try {
       const { limit, offset } = req.query;
       const limitNum = Number(limit) || 50;
       const offsetNum = Number(offset) || 0;
-      const result = await this.groupService.getAllGroups({ limit: limitNum, offset: offsetNum });
+      const result = await this.groupService.getAllGroups({
+        limit: limitNum,
+        offset: offsetNum,
+      });
       res.json({ success: true, data: result });
     } catch (err) {
       res
         .status(err.status || 500)
         .json({ success: false, message: err.message });
-    }   
+    }
   }
 
   // 14-18. JOIN GROUP / REQUEST

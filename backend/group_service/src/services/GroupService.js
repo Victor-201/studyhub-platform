@@ -135,6 +135,40 @@ export class GroupService {
     return this.groupRepo.getAllGroups({ limit, offset });
   }
 
+  async listJoinRequests(group_id, { limit = 50, offset = 0 } = {}) {
+    limit = Math.max(1, Number(limit) || 50);
+    offset = Math.max(0, Number(offset) || 0);
+
+    const [items, total] = await Promise.all([
+      this.joinRepo.listPending(group_id, { limit, offset }),
+      this.joinRepo.countPending(group_id),
+    ]);
+
+    return {
+      items,
+      total,
+      limit,
+      offset,
+    };
+  }
+
+  async listMyInvites(user_id, { limit = 50, offset = 0 } = {}) {
+    limit = Math.max(1, Number(limit) || 50);
+    offset = Math.max(0, Number(offset) || 0);
+
+    const [items, total] = await Promise.all([
+      this.joinRepo.listInvitesByUser(user_id, { limit, offset }),
+      this.joinRepo.countInvitesByUser(user_id),
+    ]);
+
+    return {
+      items,
+      total,
+      limit,
+      offset,
+    };
+  }
+
   async joinGroup(group_id, user_id) {
     const group = await this.groupRepo.getGroupById(group_id);
     if (!group) throw createError("Group not found");

@@ -57,22 +57,34 @@ export default class GroupRepository extends BaseRepository {
   }
 
   async getAllGroups({ limit = 50, offset = 0 } = {}) {
+    limit = Number(limit);
+    offset = Number(offset);
+
     const [rows] = await this.pool.query(
-      `SELECT
-      g.id,
-      g.name,
-      g.avatar_url,
-      g.description,
-      g.access,
-      g.auto_approve_docs,
-      g.created_at,
-      g.updated_at,
-      COUNT(gm.user_id) AS count_member
-    FROM \`groups\` g
-    LEFT JOIN group_members gm ON g.id = gm.group_id
-    GROUP BY g.id
-    ORDER BY g.created_at DESC
-    LIMIT ? OFFSET ?`,
+      `SELECT 
+       g.id,
+       g.name,
+       g.avatar_url,
+       g.description,
+       g.access,
+       g.auto_approve_docs,
+       g.created_at,
+       g.updated_at,
+       owner_table.owner_id AS own_id,
+       IFNULL(member_table.count_member, 0) AS count_member
+     FROM \`groups\` g
+     LEFT JOIN (
+       SELECT group_id, user_id AS owner_id
+       FROM group_members
+       WHERE role = 'OWNER'
+     ) owner_table ON g.id = owner_table.group_id
+     LEFT JOIN (
+       SELECT group_id, COUNT(*) AS count_member
+       FROM group_members
+       GROUP BY group_id
+     ) member_table ON g.id = member_table.group_id
+     ORDER BY g.created_at DESC
+     LIMIT ? OFFSET ?`,
       [limit, offset]
     );
 
