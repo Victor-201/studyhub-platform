@@ -4,25 +4,27 @@ import { Search, Plus, Users } from "lucide-react";
 
 import useGroup from "@/hooks/useGroup";
 import GroupCard from "@/components/user/group/GroupCard";
-import CreateGroup from "@/components/user/group/CreateGroup";
+import GroupModal from "@/components/user/group/GroupModal";
 
 export default function Group() {
   const { authUser } = useOutletContext();
   const isLoggedIn = !!authUser?.id;
-
   const {
     loading,
     groups,
     loadUserGroups,
     getGroupsNotJoined,
     findGroups,
+    joinGroup,
+    leaveGroup,
   } = useGroup();
-
   const fetched = useRef(false);
 
   /* ================= UI STATE ================= */
   const [view, setView] = useState("explore");
-  const [openCreate, setOpenCreate] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [editAvatar, setEditAvatar] = useState(false);
 
   /* ================= DATA STATE ================= */
   const [exploreGroups, setExploreGroups] = useState([]);
@@ -59,10 +61,25 @@ export default function Group() {
     setSearchResult(result || []);
   };
 
-  /* ================= AFTER CREATE ================= */
-  const handleCreatedGroup = async () => {
+  /* ================= AFTER SAVE ================= */
+  const handleSavedGroup = async () => {
     setView("owned");
     await loadUserGroups(authUser.id);
+  };
+
+  const handleJoinGroup = async (groupId, isRestricted) => {
+    const joinedGroup = await joinGroup(groupId);
+    if (joinedGroup && !isRestricted) {
+      setExploreGroups((prev) => prev.filter((g) => g.id !== groupId));
+    }
+  };
+
+  const handleLeaveGroup = async (groupId) => {
+    try {
+      await leaveGroup(groupId, authUser.id);
+    } catch (err) {
+      console.error("Leave group error:", err);
+    }
   };
 
   /* ================= DERIVED DATA ================= */
@@ -88,28 +105,59 @@ export default function Group() {
 
   /* ================= RENDER ================= */
   return (
-    <div className="flex min-h-screen bg-[var(--color-background)] dark:bg-[var(--color-brand-700)]">
+    <div className=" container flex bg-[var(--color-background)] dark:bg-[var(--color-brand-700)] max-w-7xl m-auto px-3">
       {/* ================= SIDEBAR ================= */}
-      <aside className="w-[280px] shrink-0 border-r border-[var(--color-brand-200)]
+      <aside
+        className="w-[280px] shrink-0 border-r border-[var(--color-brand-200)]
                         bg-[var(--color-surface)] dark:bg-[var(--color-brand-600)]
-                        p-4 flex flex-col gap-5">
-
+                        p-4 flex flex-col gap-5"
+      >
         {/* Title */}
         <div className="flex items-center gap-2">
           <Users size={20} />
           <h2 className="text-lg font-bold">Nhóm</h2>
         </div>
-
         {/* Search */}
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="relative w-full max-w-sm">
+          {/* Icon Search bên trái */}
+          <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300" />
+
+          {/* Input */}
           <input
+            type="text"
             value={search}
             onChange={handleSearch}
-            style={{ paddingLeft: "35px" }}
             placeholder="Tìm nhóm"
-            className="pl-10 w-full"
+            className="
+      w-full
+      py-2
+      pl-12
+      pr-10
+      rounded-full
+      border-2 border-transparent
+      bg-white text-gray-800
+      shadow-md
+      placeholder-gray-400
+      focus:outline-none
+      focus:border-blue-500
+      focus:ring-1 focus:ring-blue-500
+      transition-all duration-300
+      dark:bg-[var(--color-brand-700)]
+      dark:text-[var(--color-brand-50)]
+      dark:placeholder-gray-400
+    "
           />
+
+          {/* Button xóa/reset */}
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
+            >
+              <X className="w-5 h-5 text-gray-400 dark:text-gray-300" />
+            </button>
+          )}
         </div>
 
         {/* Navigation */}
@@ -135,7 +183,11 @@ export default function Group() {
 
         {/* Create group */}
         <button
-          onClick={() => setOpenCreate(true)}
+          onClick={() => {
+            setEditingGroup(null);
+            setEditAvatar(false);
+            setModalOpen(true);
+          }}
           className="flex items-center justify-center gap-2 mt-2"
         >
           <Plus size={16} />
@@ -143,38 +195,44 @@ export default function Group() {
         </button>
 
         {/* Joined preview */}
-        {joinedGroups.length > 0 && (
-          <div className="pt-4 border-t border-[var(--color-brand-200)] space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-gray-500">
-                Nhóm bạn tham gia
-              </p>
+        <div className="pt-4 border-t border-[var(--color-brand-200)] space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-gray-500">
+              Nhóm bạn tham gia
+            </p>
 
-              <button
-                data-plain
-                onClick={() => {
-                  setView("joined");
-                  setSearch("");
-                }}
-                className="text-xs font-medium text-[var(--color-accent)]
-                           hover:underline"
-              >
-                Xem tất cả
-              </button>
-            </div>
-
+            <button
+              data-plain
+              onClick={() => {
+                setView("joined");
+                setSearch("");
+              }}
+              className="text-xs font-medium text-[var(--color-accent)] hover:underline"
+            >
+              Xem tất cả
+            </button>
+          </div>
+          {joinedGroups.length > 0 ? (
             <div className="space-y-2">
               {joinedGroups.slice(0, 4).map((group) => (
                 <GroupCard
                   key={group.id}
                   group={group}
+                  authUser={authUser}
                   variant="list"
-                  preview
+                  onJoin={(groupId, isRestricted) =>
+                    handleJoinGroup(groupId, isRestricted)
+                  }
+                  onLeave={() => handleLeaveGroup(group.id)}
                 />
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              Bạn chưa tham gia nhóm nào
+            </p>
+          )}
+        </div>
       </aside>
 
       {/* ================= MAIN ================= */}
@@ -191,16 +249,36 @@ export default function Group() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {displayGroups.map((group) => (
-            <GroupCard key={group.id} group={group} />
+            <GroupCard
+              authUser={authUser}
+              key={group.id}
+              group={group}
+              onEdit={() => {
+                setEditingGroup(group);
+                setEditAvatar(false);
+                setModalOpen(true);
+              }}
+              onEditAvatar={() => {
+                setEditingGroup(group);
+                setEditAvatar(true);
+                setModalOpen(true);
+              }}
+              onJoin={(groupId, isRestricted) =>
+                handleJoinGroup(groupId, isRestricted)
+              }
+              onLeave={() => handleLeaveGroup(group.id)}
+            />
           ))}
         </div>
       </main>
 
-      {/* ================= CREATE MODAL ================= */}
-      {openCreate && (
-        <CreateGroup
-          onClose={() => setOpenCreate(false)}
-          onCreated={handleCreatedGroup}
+      {/* ================= MODAL ================= */}
+      {modalOpen && (
+        <GroupModal
+          onClose={() => setModalOpen(false)}
+          onSaved={handleSavedGroup}
+          groupInfo={editingGroup}
+          editAvatar={editAvatar}
         />
       )}
     </div>

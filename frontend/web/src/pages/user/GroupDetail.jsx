@@ -6,7 +6,7 @@ import {
   Globe,
   Crown,
   MoreHorizontal,
-  ImagePlus,
+  Camera,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -19,10 +19,10 @@ import GroupMenu from "@/components/user/group/GroupMenu";
 // MODALS
 import InviteModal from "@/components/user/group/InviteModal";
 import TransferModal from "@/components/user/group/TransferModal";
-import EditGroupModal from "@/components/user/group/EditGroupModal";
+import GroupModal from "@/components/user/group/GroupModal";
 
 export default function GroupDetail() {
-  const { authUser } = useOutletContext();
+  const { authUser, currentUser } = useOutletContext();
   const { group_id } = useParams();
   const navigate = useNavigate();
 
@@ -38,8 +38,6 @@ export default function GroupDetail() {
     inviteMember,
     getGroupMembers,
     transferOwnership,
-    updateAvatar,
-    updateGroup,
   } = useGroup();
 
   const [openMenu, setOpenMenu] = useState(false);
@@ -56,7 +54,6 @@ export default function GroupDetail() {
   const [transferring, setTransferring] = useState(false);
 
   const [isPending, setIsPending] = useState(false);
-  const [newAvatarFile, setNewAvatarFile] = useState(null);
 
   const menuRef = useRef(null);
   useClickOutside(menuRef, () => setOpenMenu(false));
@@ -157,28 +154,34 @@ export default function GroupDetail() {
         <div className="bg-[var(--color-surface)] dark:bg-[var(--color-brand-600)] rounded-2xl shadow p-6 flex flex-col md:flex-row gap-6">
           {/* AVATAR */}
           <div className="relative mx-auto w-32 md:w-40 aspect-square flex items-center justify-center">
-  <div className="w-full h-full rounded-full overflow-hidden
-                  border-4 border-[var(--color-background)] shadow">
-    <Avatar
-      url={avatar_url}
-      fallback={name?.[0]}
-      className="w-full h-full object-cover"
-    />
-  </div>
+            <div
+              className="w-full h-full rounded-full overflow-hidden
+                  border-4 border-[var(--color-background)] shadow"
+            >
+              <Avatar
+                url={avatar_url}
+                fallback={name?.[0]}
+                className="w-full h-full object-cover"
+              />
+            </div>
 
-  {(isOwner || isModerator) && (
-    <button
-      data-plain
-      onClick={() => setEditAvatarModal(true)}
-      className="absolute bottom-1 right-1 z-10 p-2
-                 bg-[var(--color-accent)] rounded-full
-                 hover:bg-[var(--color-brand-400)] hover:shadow"
-      title="Chỉnh sửa avatar"
-    >
-      <ImagePlus size={18} />
-    </button>
-  )}
-</div>
+            {(isOwner || isModerator) && (
+              <button
+                data-plain
+                onClick={() => setEditAvatarModal(true)}
+                className="
+          absolute bottom-2 right-2 z-10
+          p-2 rounded-full
+          bg-[var(--color-primary)] text-white
+          hover:bg-[var(--color-secondary)]
+          transition shadow-lg
+        "
+                title="Chỉnh sửa avatar"
+              >
+                <Camera size={18} />
+              </button>
+            )}
+          </div>
 
           {/* INFO */}
           <div className="flex-1 min-w-0">
@@ -275,7 +278,11 @@ export default function GroupDetail() {
 
         {/* TABS */}
         <div className="mt-6">
-          <GroupTabs group={currentGroup} authUser={authUser} />
+          <GroupTabs
+            group={currentGroup}
+            authUser={authUser}
+            currentUser={currentUser}
+          />
         </div>
       </div>
 
@@ -324,45 +331,21 @@ export default function GroupDetail() {
         }}
       />
 
-      <EditGroupModal
-        isOpen={editAvatarModal || editInfoModal}
-        onClose={() => {
-          setEditAvatarModal(false);
-          setEditInfoModal(false);
-        }}
-        editAvatar={editAvatarModal}
-        groupInfo={currentGroup}
-        newAvatarFile={newAvatarFile}
-        setNewAvatarFile={setNewAvatarFile}
-        handleUpdateAvatar={async () => {
-          if (!newAvatarFile) return;
-          const formData = new FormData();
-          formData.append("avatar", newAvatarFile);
-          try {
-            await updateAvatar(currentGroup.id, formData);
-            toast.success("Cập nhật avatar thành công");
+      {(editAvatarModal || editInfoModal) && (
+        <GroupModal
+          onClose={() => {
             setEditAvatarModal(false);
-            setNewAvatarFile(null);
-            await loadGroup(currentGroup.id);
-          } catch (err) {
-            toast.error(
-              err?.response?.data?.message || "Lỗi khi cập nhật avatar"
-            );
-          }
-        }}
-        handleUpdateGroupInfo={async (info) => {
-          try {
-            await updateGroup(currentGroup.id, info);
-            toast.success("Cập nhật thông tin nhóm thành công");
+            setEditInfoModal(false);
+          }}
+          onSaved={async () => {
+            setEditAvatarModal(false);
             setEditInfoModal(false);
             await loadGroup(currentGroup.id);
-          } catch (err) {
-            toast.error(
-              err?.response?.data?.message || "Lỗi khi cập nhật thông tin nhóm"
-            );
-          }
-        }}
-      />
+          }}
+          groupInfo={currentGroup}
+          editAvatar={editAvatarModal}
+        />
+      )}
     </div>
   );
 }
