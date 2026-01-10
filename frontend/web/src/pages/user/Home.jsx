@@ -4,7 +4,7 @@ import { useOutletContext } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 import useDocument from "@/hooks/useDocument";
-import CreateDocument from "@/components/user/document/CreateDocument";
+import CreateDocument from "@/components/common/CreateDocument";
 import FeedList from "@/components/user/document/FeedList";
 
 export default function Home() {
@@ -45,7 +45,7 @@ export default function Home() {
   }, [isLoggedIn]);
 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <Toaster position="top-right" />
 
       {isLoggedIn && (
