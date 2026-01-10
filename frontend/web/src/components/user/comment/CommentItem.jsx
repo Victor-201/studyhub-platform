@@ -35,7 +35,6 @@ function CommentItem({
     loadInfo(comment.user_id).then((res) => res?.user && setUser(res.user));
   }, [comment.user_id, isMine, loadInfo, user]);
 
-  // 👉 đi tới profile
   const canGoProfile = user?.id && user.id !== currentUserId;
   const goProfile = () => {
     if (!canGoProfile) return;

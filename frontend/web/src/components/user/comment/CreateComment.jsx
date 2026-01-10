@@ -3,12 +3,19 @@ import { useState } from "react";
 import Avatar from "@/components/common/Avatar";
 import useDocument from "@/hooks/useDocument";
 
-export default function CreateComment({ documentId, parentId = null, avatarUrl = null, placeholder = "Viết bình luận…", onCreated }) {
+export default function CreateComment({
+  documentId,
+  parentId = null,
+  avatarUrl = null,
+  placeholder = "Viết bình luận…",
+  onCreated,
+}) {
   const { addComment } = useDocument(documentId);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e?.stopPropagation();
     if (!content.trim() || loading) return;
     setLoading(true);
     try {
@@ -22,9 +29,10 @@ export default function CreateComment({ documentId, parentId = null, avatarUrl =
   };
 
   const handleKeyDown = (e) => {
+    e.stopPropagation();
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit();
+      handleSubmit(e);
     }
   };
 
@@ -42,7 +50,7 @@ export default function CreateComment({ documentId, parentId = null, avatarUrl =
       <button
         type="button"
         disabled={loading}
-        onClick={handleSubmit}
+        onClick={(e) => handleSubmit(e)}
         className="px-3 py-2 text-sm rounded-md disabled:opacity-50 bg-[var(--color-secondary)] text-white hover:bg-[var(--color-accent)]"
       >
         Gửi
