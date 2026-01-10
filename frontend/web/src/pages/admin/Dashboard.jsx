@@ -1,5 +1,5 @@
-// src/pages/admin/Dashboard.jsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FileText, MessageSquare, Users, UsersRound } from "lucide-react";
 import StatCard from "@/components/admin/StatCard";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,8 +7,9 @@ import useDocument from "@/hooks/useDocument";
 import useGroup from "@/hooks/useGroup";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { user, countAccounts } = useAuth();
-  const { getCounts } = useDocument();
+  const { getDocumentCount, getCommentCount } = useDocument();
   const { countGroups } = useGroup();
 
   const [stats, setStats] = useState({
@@ -21,30 +22,20 @@ export default function Dashboard() {
     deletedUsers: 0,
   });
 
-  // ===== Fetch dashboard stats once when user.id is available =====
   useEffect(() => {
-    if (!user?.id) return; // chờ user load xong
+    if (!user?.id) return;
 
     let isMounted = true;
 
     const fetchStats = async () => {
       try {
-        // documents & comments
-        const countsRes = await getCounts?.();
-        const documentsCount = countsRes?.documents ?? 0;
-        const commentsCount = countsRes?.comments ?? 0;
-
-        // groups
+        const documentsCount = await getDocumentCount();
+        const commentsCount = await getCommentCount();
         const groupsRes = await countGroups?.();
         const groupsCount = groupsRes ?? 0;
 
-        // users
         const accountsRes = await countAccounts?.();
-        const {
-          active = 0,
-          blocked = 0,
-          deleted = 0,
-        } = accountsRes?.data ?? {};
+        const { active = 0, blocked = 0, deleted = 0 } = accountsRes?.data ?? {};
         const usersCount = active + blocked + deleted;
 
         if (isMounted) {
@@ -68,37 +59,84 @@ export default function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [user?.id]); // thêm tất cả dependency
+  }, [user?.id]);
+
+  const handleCardClick = (tab) => {
+    navigate(`/admin/${tab}`);
+  };
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-semibold">Admin Dashboard</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Documents"
-          value={stats.documents}
-          icon={FileText}
-          color="green"
-        />
-        <StatCard
-          title="Comments"
-          value={stats.comments}
-          icon={MessageSquare}
-          color="blue"
-        />
-        <StatCard
-          title="Groups"
-          value={stats.groups}
-          icon={UsersRound}
-          color="red"
-        />
-        <StatCard
-          title="Users"
-          value={stats.users}
-          icon={Users}
-          color="yellow"
-        />
+        {/* Documents */}
+        <div className="transition-transform hover:scale-105">
+          <StatCard
+            title="Documents"
+            value={stats.documents}
+            icon={FileText}
+            color="green"
+            onClick={() => handleCardClick("documents")}
+          />
+        </div>
+
+        {/* Comments */}
+        <div className="transition-transform hover:scale-105">
+          <StatCard
+            title="Comments"
+            value={stats.comments}
+            icon={MessageSquare}
+            color="blue"
+            onClick={() => handleCardClick("comments")}
+          />
+        </div>
+
+        {/* Groups */}
+        <div className="transition-transform hover:scale-105">
+          <StatCard
+            title="Groups"
+            value={stats.groups}
+            icon={UsersRound}
+            color="red"
+            onClick={() => handleCardClick("groups")}
+          />
+        </div>
+
+        {/* Users card với "sub-card" bên ngoài */}
+        <div className="transition-transform hover:scale-105 space-y-2">
+          <StatCard
+            title="Users"
+            value={stats.users}
+            icon={Users}
+            color="yellow"
+            onClick={() => handleCardClick("users")}
+          />
+          {/* Sub-info */}
+          <div className="space-y-1">
+            <div
+              className="flex justify-between p-2 rounded bg-yellow-50 hover:bg-yellow-100 cursor-pointer transition"
+              onClick={() => navigate("/admin/users?filter=active")}
+            >
+              <span>Active</span>
+              <span className="font-bold">{stats.activeUsers}</span>
+            </div>
+            <div
+              className="flex justify-between p-2 rounded bg-yellow-50 hover:bg-yellow-100 cursor-pointer transition"
+              onClick={() => navigate("/admin/users?filter=blocked")}
+            >
+              <span>Blocked</span>
+              <span className="font-bold">{stats.blockedUsers}</span>
+            </div>
+            <div
+              className="flex justify-between p-2 rounded bg-yellow-50 hover:bg-yellow-100 cursor-pointer transition"
+              onClick={() => navigate("/admin/users?filter=deleted")}
+            >
+              <span>Deleted</span>
+              <span className="font-bold">{stats.deletedUsers}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
