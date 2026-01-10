@@ -3,166 +3,228 @@ USE document_db;
 -- ==================================================================
 -- SEED DOCUMENTS (ACADEMIC PLATFORM)
 -- ==================================================================
-INSERT INTO documents (id, owner_id, title, description, visibility, storage_path) VALUES
+INSERT INTO documents
+(id, owner_id, title, description, visibility, file_name, storage_path)
+VALUES
 -- user1
 ('1111-0001-4111-8111-aaaaaaaa0001','11111111-2222-4222-8222-111111111112',
 'Foundations of Linear Algebra',
-'This document provides a structured and in-depth introduction to linear algebra, including vectors, matrices, systems of linear equations, determinants, eigenvalues, and eigenvectors. The material is designed for undergraduate students in mathematics, engineering, and computer science.',
-'PUBLIC','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'This document provides a structured and in-depth introduction to linear algebra, including vectors, matrices, systems of linear equations, determinants, eigenvalues, and eigenvectors.',
+'PUBLIC',
+'Foundations_of_Linear_Algebra.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767680028/documents/document_c5d24333-181d-4429-83cd-eadfcc68de67.pptx'),
 
 ('1111-0002-4111-8111-aaaaaaaa0002','11111111-2222-4222-8222-111111111112',
 'Classical Physics: Mechanics',
-'An academic lecture document covering Newtonian mechanics, including kinematics, laws of motion, work-energy theorem, momentum, and rotational dynamics, supported by solved examples and conceptual explanations.',
-'PUBLIC','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'An academic lecture document covering Newtonian mechanics.',
+'PUBLIC',
+'Classical_Physics_Mechanics.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767680028/documents/document_c5d24333-181d-4429-83cd-eadfcc68de67.pptx'),
 
 ('1111-0003-4111-8111-aaaaaaaa0003','11111111-2222-4222-8222-111111111112',
 'Advanced Linear Algebra and Applications',
-'This group-shared document explores advanced linear algebra topics such as vector spaces, inner product spaces, spectral theorem, matrix factorization, and applications in machine learning and data analysis.',
-'GROUP','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Advanced linear algebra topics with applications in ML.',
+'GROUP',
+'Advanced_Linear_Algebra_Applications.docx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767680159/documents/document_81e4debb-6cae-40d3-a04a-cb5de88aa8aa.docx'),
 
 -- user2
 ('1112-0001-4111-8111-aaaaaaaa0004','11111111-2222-4222-8222-111111111113',
 'General Chemistry I',
-'A comprehensive introduction to general chemistry, covering atomic structure, periodic trends, chemical bonding, stoichiometry, and fundamental reaction types.',
-'PUBLIC','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Introduction to general chemistry.',
+'PUBLIC',
+'General_Chemistry_I.docx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767680159/documents/document_81e4debb-6cae-40d3-a04a-cb5de88aa8aa.docx'),
 
 ('1112-0002-4111-8111-aaaaaaaa0005','11111111-2222-4222-8222-111111111113',
 'Chemical Laboratory Safety Guidelines',
-'A private reference document describing laboratory safety rules, hazard symbols, chemical handling procedures, and waste disposal standards used in academic laboratories.',
-'PRIVATE','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Laboratory safety rules.',
+'PRIVATE',
+'Chemical_Lab_Safety_Guidelines.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1112-0003-4111-8111-aaaaaaaa0006','11111111-2222-4222-8222-111111111113',
 'Chemical Thermodynamics',
-'This group document explains thermodynamic principles applied to chemistry, including the first and second laws, entropy, enthalpy, Gibbs free energy, and chemical equilibrium.',
-'GROUP','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Thermodynamic principles.',
+'GROUP',
+'Chemical_Thermodynamics.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 -- user3
 ('1113-0001-4111-8111-aaaaaaaa0007','11111111-2222-4222-8222-111111111114',
 'Cell Biology Fundamentals',
-'An academic overview of cell biology, focusing on cell structure, membranes, organelles, cell signaling pathways, and the cell cycle.',
-'PUBLIC','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Overview of cell biology.',
+'PUBLIC',
+'Cell_Biology_Fundamentals.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1113-0002-4111-8111-aaaaaaaa0008','11111111-2222-4222-8222-111111111114',
 'Biological Research Techniques',
-'A private document describing experimental methods in biology, including microscopy, molecular techniques, data analysis, and laboratory best practices.',
-'PRIVATE','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Experimental methods in biology.',
+'PRIVATE',
+'Biological_Research_Techniques.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1113-0003-4111-8111-aaaaaaaa0009','11111111-2222-4222-8222-111111111114',
 'Molecular Biology and Genetics',
-'This group-shared document focuses on DNA structure, replication, transcription, translation, gene regulation, and fundamental genetic mechanisms.',
-'GROUP','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Genetics fundamentals.',
+'GROUP',
+'Molecular_Biology_and_Genetics.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 -- user4
 ('1114-0001-4111-8111-aaaaaaaa0010','11111111-2222-4222-8222-111111111115',
 'World History: Ancient to Medieval Periods',
-'A survey document examining major ancient and medieval civilizations, their political systems, cultures, and historical influence.',
-'PUBLIC','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Survey of ancient history.',
+'PUBLIC',
+'World_History_Ancient_Medieval.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1114-0002-4111-8111-aaaaaaaa0011','11111111-2222-4222-8222-111111111115',
 'Historical Research Methodology',
-'A private academic guide covering historical research methods, primary and secondary sources, citation standards, and academic writing.',
-'PRIVATE','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Research methods.',
+'PRIVATE',
+'Historical_Research_Methodology.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1114-0003-4111-8111-aaaaaaaa0012','11111111-2222-4222-8222-111111111115',
 'Modern World History and Global Conflicts',
-'This group document analyzes major global conflicts of the modern era, including world wars, cold war dynamics, and geopolitical consequences.',
-'GROUP','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Modern conflicts.',
+'GROUP',
+'Modern_World_History_Conflicts.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 -- user5
 ('1115-0001-4111-8111-aaaaaaaa0013','11111111-2222-4222-8222-111111111116',
 'Introduction to World Literature',
-'An academic introduction to world literature, covering major literary movements, genres, and representative authors.',
-'PUBLIC','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'World literature overview.',
+'PUBLIC',
+'Introduction_to_World_Literature.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1115-0002-4111-8111-aaaaaaaa0014','11111111-2222-4222-8222-111111111116',
 'Literary Analysis Techniques',
-'A private document presenting methods for analyzing literary texts, including narrative structure, themes, symbolism, and critical theory.',
-'PRIVATE','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Analysis methods.',
+'PRIVATE',
+'Literary_Analysis_Techniques.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1115-0003-4111-8111-aaaaaaaa0015','11111111-2222-4222-8222-111111111116',
 'Comparative Literature Studies',
-'This group document compares literary works across cultures and historical periods, emphasizing cross-cultural interpretation.',
-'GROUP','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Comparative studies.',
+'GROUP',
+'Comparative_Literature_Studies.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 -- user6
 ('1116-0001-4111-8111-aaaaaaaa0016','11111111-2222-4222-8222-111111111117',
 'Introduction to Programming',
-'A beginner-friendly academic document covering programming fundamentals such as variables, control structures, functions, and basic algorithms.',
-'PUBLIC','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Programming basics.',
+'PUBLIC',
+'Introduction_to_Programming.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1116-0002-4111-8111-aaaaaaaa0017','11111111-2222-4222-8222-111111111117',
 'Data Structures and Algorithms',
-'A private document discussing core data structures, algorithmic complexity, and problem-solving strategies.',
-'PRIVATE','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Core DS & Algo.',
+'PRIVATE',
+'Data_Structures_and_Algorithms.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1116-0003-4111-8111-aaaaaaaa0018','11111111-2222-4222-8222-111111111117',
 'Software Engineering Principles',
-'This group document introduces software development life cycles, design patterns, testing strategies, and collaborative development.',
-'GROUP','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'SE principles.',
+'GROUP',
+'Software_Engineering_Principles.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 -- user7
 ('1117-0001-4111-8111-aaaaaaaa0019','11111111-2222-4222-8222-111111111118',
 'Artificial Intelligence Fundamentals',
-'An introductory document explaining core concepts of artificial intelligence, including search algorithms, knowledge representation, and reasoning.',
-'PUBLIC','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'AI basics.',
+'PUBLIC',
+'AI_Fundamentals.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1117-0002-4111-8111-aaaaaaaa0020','11111111-2222-4222-8222-111111111118',
 'Ethics in Artificial Intelligence',
-'A private academic discussion on ethical challenges in AI, including bias, fairness, transparency, and social impact.',
-'PRIVATE','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'AI ethics.',
+'PRIVATE',
+'Ethics_in_AI.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1117-0003-4111-8111-aaaaaaaa0021','11111111-2222-4222-8222-111111111118',
 'Applied Artificial Intelligence',
-'This group document focuses on real-world AI applications such as natural language processing, computer vision, and recommendation systems.',
-'GROUP','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Applied AI.',
+'GROUP',
+'Applied_AI.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 -- user8
 ('1118-0001-4111-8111-aaaaaaaa0022','11111111-2222-4222-8222-111111111119',
 'Machine Learning Basics',
-'A foundational academic document introducing supervised and unsupervised learning, regression, classification, and evaluation metrics.',
-'PUBLIC','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'ML basics.',
+'PUBLIC',
+'Machine_Learning_Basics.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1118-0002-4111-8111-aaaaaaaa0023','11111111-2222-4222-8222-111111111119',
 'Deep Learning Architectures',
-'A private document discussing neural networks, convolutional networks, recurrent networks, and training techniques.',
-'PRIVATE','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'DL architectures.',
+'PRIVATE',
+'Deep_Learning_Architectures.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1118-0003-4111-8111-aaaaaaaa0024','11111111-2222-4222-8222-111111111119',
 'Machine Learning Applications',
-'This group document explores machine learning use cases in healthcare, finance, education, and scientific research.',
-'GROUP','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'ML applications.',
+'GROUP',
+'Machine_Learning_Applications.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 -- user9
 ('1119-0001-4111-8111-aaaaaaaa0025','11111111-2222-4222-8222-111111111120',
 'Introduction to Academic Writing',
-'A guide for students on academic writing, covering structure, clarity, citation styles, and plagiarism avoidance.',
-'PUBLIC','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Academic writing guide.',
+'PUBLIC',
+'Introduction_to_Academic_Writing.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1119-0002-4111-8111-aaaaaaaa0026','11111111-2222-4222-8222-111111111120',
 'Research Proposal Development',
-'A private document explaining how to formulate research questions, design methodologies, and write effective proposals.',
-'PRIVATE','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Proposal writing.',
+'PRIVATE',
+'Research_Proposal_Development.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1119-0003-4111-8111-aaaaaaaa0027','11111111-2222-4222-8222-111111111120',
 'Scientific Research Methodology',
-'This group document discusses quantitative and qualitative research methods, data collection, and analysis techniques.',
-'GROUP','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Research methods.',
+'GROUP',
+'Scientific_Research_Methodology.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 -- user10
 ('1120-0001-4111-8111-aaaaaaaa0028','11111111-2222-4222-8222-111111111121',
 'Foundations of Higher Education',
-'An overview document discussing the structure of higher education systems, learning outcomes, and academic standards.',
-'PUBLIC','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Higher education overview.',
+'PUBLIC',
+'Foundations_of_Higher_Education.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1120-0002-4111-8111-aaaaaaaa0029','11111111-2222-4222-8222-111111111121',
 'University Teaching and Assessment',
-'A private academic resource focusing on teaching methodologies, assessment strategies, and student evaluation.',
-'PRIVATE','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx'),
+'Teaching & assessment.',
+'PRIVATE',
+'University_Teaching_and_Assessment.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx'),
 
 ('1120-0003-4111-8111-aaaaaaaa0030','11111111-2222-4222-8222-111111111121',
 'Academic Quality Assurance',
-'This group document examines quality assurance frameworks, accreditation processes, and continuous improvement in education.',
-'GROUP','https://res.cloudinary.com/dvzdkwmzn/raw/upload/v1765695436/documents/document_4cd6d7df-d314-4229-a296-54dcfc543556.pptx');
+'Quality assurance.',
+'GROUP',
+'Academic_Quality_Assurance.pptx',
+'https://res.cloudinary.com/drfbrvvug/raw/upload/v1767679336/documents/document_7b5a7802-ace2-4aca-8a54-38a958cad7bc.pptx');
 
 -- ==================================================================
 -- SEED GROUP DOCUMENTS (only GROUP visibility)
@@ -223,7 +285,8 @@ INSERT INTO document_comments (id, document_id, user_id, content, parent_comment
 -- ==================================================================
 -- SEED DOCUMENT DOWNLOADS
 -- ==================================================================
-INSERT INTO document_downloads (document_id, user_id) VALUES
-('1111-0001-4111-8111-aaaaaaaa0001', '11111111-2222-4222-8222-111111111114'),
-('1111-0002-4111-8111-aaaaaaaa0002', '11111111-2222-4222-8222-111111111115'),
-('1112-0001-4111-8111-aaaaaaaa0004', '11111111-2222-4222-8222-111111111116');
+INSERT INTO document_downloads (id, document_id, user_id) VALUES
+('8a111111-0001-4111-8111-akadsaaa0001', '1111-0001-4111-8111-aaaaaaaa0001', '11111111-2222-4222-8222-111111111114'),
+('8a111111-0002-4111-8111-akadsaaa0002', '1111-0002-4111-8111-aaaaaaaa0002', '11111111-2222-4222-8222-111111111115'),
+('8a111111-0004-4111-8111-akadsaaa0004', '1112-0001-4111-8111-aaaaaaaa0004', '11111111-2222-4222-8222-111111111116');
+-- 

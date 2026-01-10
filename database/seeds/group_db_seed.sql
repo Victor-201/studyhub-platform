@@ -1,8 +1,8 @@
 USE group_db;
 
 INSERT INTO `groups` (id, name, avatar_url, description, access, auto_approve_docs) VALUES
-('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Group Alpha', NULL, 'Nhóm 1 test', 'PUBLIC', 0),
-('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2', 'Group Beta',  NULL, 'Nhóm 2 test', 'RESTRICTED', 0);
+('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Group Alpha', NULL, 'Group 1 test', 'PUBLIC', 0),
+('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2', 'Group Beta',  NULL, 'Group 2 test', 'RESTRICTED', 0);
 
 -- =========================
 -- GROUP 1 MEMBERS (6 người)
