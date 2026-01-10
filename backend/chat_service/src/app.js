@@ -38,7 +38,7 @@ export function createApp() {
         messageRepo,
     });
 
-    const deps = { chatService };
+    const deps = { chatService, conversationRepo };
 
     // ===== Routes =====
     app.use(env.API_PREFIX || "/api/v1/chat", createChatRouter(deps));

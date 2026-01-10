@@ -130,6 +130,16 @@ export class ChatController {
                 type,
             });
 
+            // Emit to socket
+            const io = req.app.locals.io;
+            const conversation = await this.chatService.getConversation(message.conversation_id, sender_id);
+            const receivers = conversation.participants.filter(id => id !== sender_id);
+            receivers.forEach(id => {
+                io.to(id).emit("conversation_update");
+                io.to(id).emit("receive_message", message);
+            });
+            io.to(message.conversation_id).emit("receive_message", message);
+
             res.status(201).json({ success: true, data: message });
         } catch (err) {
             res.status(err.status || 500).json({ success: false, message: err.message });
@@ -157,6 +167,16 @@ export class ChatController {
                 content,
                 type,
             });
+
+            // Emit to socket
+            const io = req.app.locals.io;
+            const conversation = await this.chatService.getConversation(message.conversation_id, sender_id);
+            const receivers = conversation.participants.filter(id => id !== sender_id);
+            receivers.forEach(id => {
+                io.to(id).emit("conversation_update");
+                io.to(id).emit("receive_message", message);
+            });
+            io.to(message.conversation_id).emit("receive_message", message);
 
             res.status(201).json({ success: true, data: message });
         } catch (err) {
