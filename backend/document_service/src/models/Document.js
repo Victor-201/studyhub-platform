@@ -4,6 +4,7 @@ export default class Document {
   #title;
   #description;
   #visibility;
+  #file_name;
   #storage_path;
   #created_at;
   #updated_at;
@@ -14,6 +15,7 @@ export default class Document {
     this.#title = row.title;
     this.#description = row.description;
     this.#visibility = row.visibility;
+    this.#file_name = row.file_name;
     this.#storage_path = row.storage_path;
     this.#created_at = row.created_at ? new Date(row.created_at) : null;
     this.#updated_at = row.updated_at ? new Date(row.updated_at) : null;
@@ -24,6 +26,7 @@ export default class Document {
   get title() { return this.#title; }
   get description() { return this.#description; }
   get visibility() { return this.#visibility; }
+  get file_name() { return this.#file_name; }
   get storage_path() { return this.#storage_path; }
   get created_at() { return this.#created_at; }
   get updated_at() { return this.#updated_at; }
@@ -35,6 +38,7 @@ export default class Document {
       title: this.#title,
       description: this.#description,
       visibility: this.#visibility,
+      file_name: this.#file_name,
       storage_path: this.#storage_path,
       created_at: this.#created_at,
       updated_at: this.#updated_at,

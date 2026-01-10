@@ -33,20 +33,6 @@ export default class GroupDocumentRepository extends BaseRepository {
     return rows.map(r => new GroupDocument(r));
   }
 
-  async findApprovedDocuments({ limit = 50, offset = 0 } = {}) {
-    const [rows] = await this.pool.query(
-      `
-      SELECT d.* FROM documents d
-      JOIN group_documents gd ON gd.document_id = d.id
-      WHERE gd.status = 'APPROVED'
-      ORDER BY d.created_at DESC
-      LIMIT ? OFFSET ?
-      `,
-      [limit, offset]
-    );
-    return rows.map(r => new Document(r));
-  }
-
   async findApprovedInGroup(group_id, { limit = 50, offset = 0 } = {}) {
     const [rows] = await this.pool.query(
       `

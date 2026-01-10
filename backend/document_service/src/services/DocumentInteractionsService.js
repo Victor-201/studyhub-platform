@@ -1,5 +1,4 @@
 import { randomUUID } from "crypto";
-import { buildDownloadUrl } from "../utils/cloudinary.js";
 
 export default class DocumentInteractionsService {
   constructor({
@@ -46,6 +45,10 @@ export default class DocumentInteractionsService {
   }
 
   /* ================= BOOKMARK ================= */
+  async isBookmarked(document_id, user_id) {
+    return this.bookmarkRepo.isBookmarked(user_id, document_id);
+  }
+
   async toggleBookmark(document_id, user_id) {
     if (!(await this.canAccess(document_id, user_id))) {
       throw new Error("forbidden");
@@ -118,97 +121,110 @@ export default class DocumentInteractionsService {
     return { updated: true };
   }
 
-  async deleteComment(comment_id, user_id) {
+  async deleteComment(comment_id, user_id, isAdmin = false) {
     const comment = await this.commentRepo.findById(comment_id);
-    if (!comment) throw new Error("comment_not_found");
-
-    const document = await this.documentRepo.findById(comment.document_id);
-    if (!document) throw new Error("document_not_found");
-
-    const isCommentOwner = comment.user_id === user_id;
-    const isDocumentOwner = document.owner_id === user_id;
-
-    if (!isCommentOwner && !isDocumentOwner) {
-      throw new Error("forbidden");
+    if (!comment) {
+      throw new Error("comment_not_found");
     }
 
-    await this.commentRepo.deleteComment(comment_id);
+    if (!isAdmin) {
+      const isCommentOwner = comment.user_id === user_id;
+
+      if (!isCommentOwner) {
+        const document = await this.documentRepo.findById(comment.document_id);
+        if (!document) {
+          throw new Error("document_not_found");
+        }
+        const isDocumentOwner = document.owner_id === user_id;
+        if (!isDocumentOwner) {
+          throw new Error("forbidden");
+        }
+      }
+    }
+
+    await this.commentRepo.deleteById(comment_id);
+
     return { deleted: true };
   }
 
-  async getCommentsByDocument(document_id, { limit = 10, offset = 0 }) {
-    // 1️⃣ Lấy comment mới nhất theo limit + offset
-    const latestComments = await this.commentRepo.findByDocumentPaginated(
-      document_id,
-      { limit, offset }
-    );
-
-    const allCommentsMap = new Map();
-
-    // 2️⃣ Lấy cha đến root nếu có
-    const fetchParentChain = async (comment) => {
-      const chain = [];
-      let current = comment;
-
-      while (current.parent_comment_id) {
-        if (allCommentsMap.has(current.parent_comment_id)) {
-          chain.push(allCommentsMap.get(current.parent_comment_id));
-          break;
-        }
-
-        const parent = await this.commentRepo.findById(
-          current.parent_comment_id
-        );
-        if (!parent) break;
-
-        chain.push(parent);
-        allCommentsMap.set(parent.id, parent);
-        current = parent;
-      }
-
-      return chain.reverse(); // từ gốc → cha
-    };
-
-    // 3️⃣ Ghép cha + con
-    const results = [];
-    for (const c of latestComments) {
-      const parents = await fetchParentChain(c);
-      results.push(...parents, c);
-    }
-
-    // 4️⃣ Loại trùng (nếu nhiều comment share cha)
-    const unique = [];
-    const seen = new Set();
-    for (const c of results) {
-      if (!seen.has(c.id)) {
-        unique.push(c);
-        seen.add(c.id);
-      }
-    }
-
-    return unique;
-  }
-
-  async getAllComments({ limit, offset }) {
-    return this.commentRepo.findAllPaginated({ limit, offset });
-  }
-
-  /* ================= DOWNLOAD ================= */
   async recordDownload(document_id, user_id) {
     if (!(await this.canAccess(document_id, user_id))) {
       throw new Error("forbidden");
     }
 
     const doc = await this.documentRepo.findById(document_id);
+    if (!doc) throw new Error("document_not_found");
+
+    this.logger.info("DOWNLOAD_DOCUMENT_INFO", {
+      document_id: doc.id,
+      title: doc.title,
+      file_name: doc.file_name,
+      owner_id: doc.owner_id,
+      visibility: doc.visibility,
+      storage_path: doc.storage_path,
+      request_user: user_id,
+      time: new Date().toISOString(),
+    });
 
     try {
       await this.downloadRepo.createDownload({
+        id: randomUUID(),
         document_id,
         user_id,
         downloaded_at: new Date(),
       });
-    } catch {}
+    } catch (err) {
+      this.logger.warn("download log error", err);
+    }
 
-    return buildDownloadUrl(doc);
+    return doc;
+  }
+
+  async approveDocument({ document_id, user_id, group_id }) {
+    const document = await this.documentRepo.findById(document_id);
+    if (!document) throw new Error("document_not_found");
+
+    const groupDoc = await this.groupDocRepo.findByGroupAndDocument(
+      group_id,
+      document_id
+    );
+    if (!groupDoc) throw new Error("group_document_not_found");
+
+    if (groupDoc.status === "APPROVED") {
+      return { approved: false, message: "Document already approved" };
+    }
+
+    await this.groupClient.validateReviewer({
+      group_id,
+      reviewer_id: user_id,
+    });
+
+    await this.groupDocRepo.approveDocument(groupDoc.id, user_id);
+
+    return { approved: true };
+  }
+
+  async rejectDocument({ document_id, user_id, group_id }) {
+    const document = await this.documentRepo.findById(document_id);
+    if (!document) throw new Error("document_not_found");
+
+    const groupDoc = await this.groupDocRepo.findByGroupAndDocument(
+      group_id,
+      document_id
+    );
+    if (!groupDoc) throw new Error("group_document_not_found");
+
+    if (groupDoc.status === "REJECTED") {
+      return { approved: false, message: "Document already rejected" };
+    }
+
+    await this.groupClient.validateReviewer({
+      group_id,
+      reviewer_id: user_id,
+    });
+
+    await this.groupDocRepo.rejectDocument(groupDoc.id, user_id);
+
+    return { approved: true };
   }
 }

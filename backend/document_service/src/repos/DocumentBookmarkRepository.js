@@ -18,7 +18,16 @@ export default class DocumentBookmarkRepository extends BaseRepository {
   }
 
   async isBookmarked(user_id, document_id) {
-    const rows = await super.findAll({ user_id, document_id });
+    const [rows] = await this.pool.query(
+      `
+      SELECT 1
+      FROM document_bookmarks
+      WHERE user_id = ? AND document_id = ?
+      LIMIT 1
+      `,
+      [user_id, document_id]
+    );
+
     return rows.length > 0;
   }
 

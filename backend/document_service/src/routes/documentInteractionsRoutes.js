@@ -1,5 +1,6 @@
 import express from "express";
 import { verifyAccessToken } from "../middlewares/auth.js";
+import { requireRole } from "../middlewares/role.js";
 import { DocumentInteractionsController } from "../controllers/DocumentInteractionsController.js";
 
 /**
@@ -20,24 +21,22 @@ export function createDocumentInteractionsRouter({
   // =========================
   //        INTERACTIONS
   // =========================
+  router.get("/:id/bookmark", controller.isBookmarked.bind(controller));
 
   router.post("/:id/bookmark", controller.toggleBookmark.bind(controller));
 
   router.post("/:id/comments", controller.addComment.bind(controller));
-
-  router.get(
-    "/:id/comments",
-    controller.getCommentsByDocument.bind(controller)
-  );
-
-  router.get("/admin/comments", controller.getAllComments.bind(controller));
 
   router.delete(
     "/comments/:comment_id",
     controller.deleteComment.bind(controller)
   );
 
-  router.post("/:id/download", controller.recordDownload.bind(controller));
+  router.get("/:id/download", controller.recordDownload.bind(controller));
+
+  router.post("/:id/approve", controller.approveDocument.bind(controller));
+
+  router.post("/:id/reject", controller.rejectDocument.bind(controller));
 
   return router;
 }

@@ -70,20 +70,15 @@ export default class GroupServiceClient {
 
   async evaluateDocumentApproval({ group_id, requester_id }) {
     const { group, role } = await this.getMembership(group_id, requester_id);
-    const autoApprove = Number(group?.auto_approve_docs) === 1;
 
-    if (autoApprove || role === "OWNER" || role === "MODERATOR") {
-      return {
-        autoApprove: true,
-        requireReview: false,
-        reviewer_id: requester_id,
-      };
-    }
+    if (!group) throw new Error("group_not_found");
+
+    const autoApprove =
+      Number(group?.auto_approve_docs) === 1 ||
+      ["OWNER", "MODERATOR"].includes(role);
 
     return {
-      autoApprove: false,
-      requireReview: true,
-      reviewer_id: null,
+      autoApprove,
     };
   }
 

@@ -42,6 +42,7 @@ export default class DocumentService {
       title: doc.title,
       description: doc.description,
       visibility: doc.visibility,
+      group_id: doc.group_id,
 
       tag: tags.map((t) => t.tag),
 
@@ -51,8 +52,8 @@ export default class DocumentService {
         downloads: downloadCount,
       },
 
+      file_name: doc.file_name,
       storage_path: doc.storage_path,
-      preview_url: buildPreviewUrl(doc),
       created_at: doc.created_at,
       updated_at: doc.updated_at,
     };
@@ -67,14 +68,24 @@ export default class DocumentService {
     const groups = await this.groupDocRepo.findGroupsByDocument(document_id);
 
     for (const g of groups) {
-      if (g.status !== "APPROVED") continue;
-
       try {
-        const { allowed } = await this.groupClient.canViewGroupDocuments(
-          g.group_id,
-          user_id
-        );
-        if (allowed) return true;
+        if (g.status === "APPROVED") {
+          const { allowed } = await this.groupClient.canViewGroupDocuments(
+            g.group_id,
+            user_id
+          );
+          if (allowed) return true;
+        } else {
+          try {
+            await this.groupClient.validateReviewer({
+              group_id: g.group_id,
+              reviewer_id: user_id,
+            });
+            return true;
+          } catch {
+            continue;
+          }
+        }
       } catch (err) {
         this.logger.error("Error checking group access:", err.message);
       }
@@ -83,7 +94,6 @@ export default class DocumentService {
     return false;
   }
 
-  /* ================= CREATE ================= */
   async createDocument({
     owner_id,
     title,
@@ -98,6 +108,7 @@ export default class DocumentService {
     const document_id = randomUUID();
     const now = new Date();
 
+    const originalFileName = file.originalname;
     const ext = file.originalname?.split(".").pop()?.toLowerCase() || "";
     const publicId = `document_${document_id}`;
 
@@ -112,6 +123,7 @@ export default class DocumentService {
       title,
       description,
       visibility,
+      file_name: originalFileName,
       storage_path: uploaded.secure_url,
       created_at: now,
       updated_at: now,
@@ -123,12 +135,6 @@ export default class DocumentService {
 
     if (visibility === "GROUP") {
       if (!group_id) throw new Error("group_id_required");
-
-      const membership = await this.groupClient.getMembership(
-        group_id,
-        owner_id
-      );
-      if (!membership?.role) throw new Error("forbidden");
 
       const { autoApprove } = await this.groupClient.evaluateDocumentApproval({
         group_id,
@@ -150,13 +156,15 @@ export default class DocumentService {
     return this._attachTagsToDocument(doc);
   }
 
-  /* ================= COUNTS ================= */
-  async count() {
+  async countDocuments() {
     const countDocuments = await this.documentRepo.countAllDocuments();
-    const countComments = await this.commentRepo.countAllComments();
-    return { countDocuments, countComments };
+    return { countDocuments };
   }
 
+  async countComments() {
+    const countComments = await this.commentRepo.countAllComments();
+    return { countComments };
+  }
   /* ================= FEEDS ================= */
   async getPublicFeed({ limit = 50, offset = 0 }) {
     const docs = await this.documentRepo.findPublicFeed({ limit, offset });
@@ -205,9 +213,13 @@ export default class DocumentService {
     return this._attachTagsToDocuments(docs);
   }
   /* ================= DETAIL ================= */
-  async getDocumentDetail(document_id, requester_id = null) {
+  async getDocumentDetail(document_id, requester_id = null, isAdmin = false) {
     const doc = await this.documentRepo.findById(document_id);
     if (!doc) throw new Error("document_not_found");
+
+    if (isAdmin) {
+      return this._attachTagsToDocument(doc);
+    }
 
     if (doc.visibility === "PUBLIC") {
       return this._attachTagsToDocument(doc);
@@ -230,9 +242,53 @@ export default class DocumentService {
     return this._attachTagsToDocument(doc);
   }
 
+  /* ================= PREVIEW ================= */
+  async getDocumentPreview(document_id, requester_id = null, isAdmin = false) {
+    const doc = await this.documentRepo.findById(document_id);
+    if (!doc) throw new Error("document_not_found");
+
+    if (isAdmin) {
+      return {
+        document_id: doc.id,
+        preview_url: buildPreviewUrl(doc),
+      };
+    }
+
+    if (doc.visibility === "PUBLIC") {
+      return {
+        document_id: doc.id,
+        preview_url: buildPreviewUrl(doc),
+      };
+    }
+
+    if (doc.visibility === "PRIVATE") {
+      if (doc.owner_id !== requester_id) throw new Error("forbidden");
+
+      return {
+        document_id: doc.id,
+        preview_url: buildPreviewUrl(doc),
+      };
+    }
+
+    if (doc.visibility === "GROUP") {
+      const allowed = await this._canAccessGroupDocument(
+        document_id,
+        requester_id
+      );
+      if (!allowed) throw new Error("forbidden");
+
+      return {
+        document_id: doc.id,
+        preview_url: buildPreviewUrl(doc),
+      };
+    }
+
+    throw new Error("forbidden");
+  }
+
   /* ================= GROUP ================= */
   async getApprovedDocuments({ limit = 50, offset = 0 } = {}) {
-    const docs = await this.groupDocRepo.findApprovedDocuments({
+    const docs = await this.documentRepo.findAllDocuments({
       limit,
       offset,
     });
@@ -307,26 +363,146 @@ export default class DocumentService {
     await this.documentRepo.deleteById(document_id);
   }
 
-  /* ================= SEARCH ================= */
-  async searchDocuments(params, requester_id, limit = 50) {
-    params.page = Number(params.page) || 1;
-    params.limit = params.limit || limit;
+  async searchDocuments(
+    keyword,
+    requester_id,
+    { limit = 10, offset = 0 } = {}
+  ) {
+    if (!keyword) return [];
 
-    const results = await this.documentRepo.search(params);
+    const results = await this.documentRepo.searchByKeyword(
+      keyword,
+      limit,
+      offset
+    );
+    if (!results || results.length === 0) return [];
 
     const filtered = [];
+    const groupCache = {};
+
     for (const doc of results) {
       try {
-        await this.getDocumentDetail(doc.id, requester_id);
-        filtered.push(doc);
-      } catch {}
+        if (doc.visibility === "PUBLIC") {
+          filtered.push(doc);
+          continue;
+        }
+
+        if (doc.visibility === "PRIVATE") {
+          if (doc.owner_id === requester_id) filtered.push(doc);
+          continue;
+        }
+
+        if (doc.visibility === "GROUP") {
+          const groups = await this.groupDocRepo.findGroupsByDocument(doc.id);
+          let allowed = false;
+
+          for (const g of groups) {
+            try {
+              if (g.status === "APPROVED") {
+                if (!groupCache[g.group_id]) {
+                  groupCache[g.group_id] =
+                    await this.groupClient.canViewGroupDocuments(
+                      g.group_id,
+                      requester_id
+                    );
+                }
+                if (groupCache[g.group_id].allowed) {
+                  allowed = true;
+                  break;
+                }
+              } else {
+                // reviewer check
+                await this.groupClient.validateReviewer({
+                  group_id: g.group_id,
+                  reviewer_id: requester_id,
+                });
+                allowed = true;
+                break;
+              }
+            } catch {
+              // nếu lỗi check quyền, bỏ luôn document này
+              allowed = false;
+              throw new Error(`Cannot access group ${g.group_id}`);
+            }
+          }
+
+          if (allowed) filtered.push(doc);
+        }
+      } catch (err) {
+        this.logger.error(
+          `Skipping doc ${doc.id} due to group check error: ${err.message}`
+        );
+        continue; // bỏ doc này, tiếp tục vòng lặp
+      }
     }
 
-    return this._attachTagsToDocuments(filtered);
+    return filtered;
   }
 
   /* ================= TAGS ================= */
   async getAllTags() {
     return await this.tagRepo.getAllTags();
+  }
+
+  async getCommentsByDocument(document_id, { limit = 10, offset = 0 }) {
+    const latestComments = await this.commentRepo.findByDocumentPaginated(
+      document_id,
+      { limit, offset }
+    );
+
+    const allCommentsMap = new Map();
+
+    const fetchParentChain = async (comment) => {
+      const chain = [];
+      let current = comment;
+
+      while (current.parent_comment_id) {
+        if (allCommentsMap.has(current.parent_comment_id)) {
+          chain.push(allCommentsMap.get(current.parent_comment_id));
+          break;
+        }
+
+        const parent = await this.commentRepo.findById(
+          current.parent_comment_id
+        );
+        if (!parent) break;
+
+        chain.push(parent);
+        allCommentsMap.set(parent.id, parent);
+        current = parent;
+      }
+
+      return chain.reverse();
+    };
+
+    const results = [];
+    for (const c of latestComments) {
+      const parents = await fetchParentChain(c);
+      results.push(...parents, c);
+    }
+
+    const unique = [];
+    const seen = new Set();
+    for (const c of results) {
+      if (!seen.has(c.id)) {
+        unique.push(c);
+        seen.add(c.id);
+      }
+    }
+
+    return unique;
+  }
+
+  async getAllComments({ limit = 50, offset = 0 } = {}) {
+    limit = Number.isInteger(+limit) ? Number(limit) : 50;
+    offset = Number.isInteger(+offset) ? Number(offset) : 0;
+
+    const comments = await this.commentRepo.findAllPaginated({ limit, offset });
+    const total = await this.commentRepo.countAllComments();
+
+    return {
+      data: comments.map((c) => c.toJSON()),
+      pagination: { limit, offset, total },
+    };
   }
 }

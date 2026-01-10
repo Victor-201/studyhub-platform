@@ -34,13 +34,55 @@ export class DocumentController {
   // =====================================================
   // ADMIN counts
   // =====================================================
-  async count(req, res) {
+  async countDocuments(req, res) {
     try {
-      const counts = await this.documentService.count();
-
+      const counts = await this.documentService.countDocuments();
       return res.json(counts);
     } catch (err) {
       return res.status(400).json({ error: err.message });
+    }
+  }
+
+  async countComments(req, res) {
+    try {
+      const counts = await this.documentService.countComments();
+      return res.json(counts);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+
+  async getCommentsByDocument(req, res) {
+    try {
+      const { limit = 50, offset = 0 } = req.query;
+
+      const comments = await this.documentService.getCommentsByDocument(
+        req.params.id,
+        {
+          limit: Number(limit),
+          offset: Number(offset),
+        }
+      );
+
+      return res.json(comments);
+    } catch (err) {
+      return res.status(403).json({ error: err.message });
+    }
+  }
+
+  async getAllComments(req, res) {
+    try {
+      const limit = Math.min(Number(req.query.limit) || 50, 100);
+      const offset = Number(req.query.offset) || 0;
+
+      const result = await this.documentService.getAllComments({
+        limit,
+        offset,
+      });
+
+      return res.json(result);
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
     }
   }
 
@@ -96,13 +138,41 @@ export class DocumentController {
   // =====================================================
   async getDocument(req, res) {
     try {
+      const user = req.user;
+      const isAdmin = Array.isArray(user?.role)
+        ? user.role.includes("admin")
+        : user?.role === "admin";
       const doc = await this.documentService.getDocumentDetail(
         req.params.id,
-        req.user?.id
+        user?.id,
+        isAdmin
       );
 
       return res.json(doc);
     } catch (err) {
+      return res.status(403).json({ error: err.message });
+    }
+  }
+
+  // =====================================================
+  // GET DOCUMENT PREVIEW URL
+  // =====================================================
+  async getDocumentPreviewUrl(req, res) {
+    try {
+      const user = req.user;
+      const isAdmin = Array.isArray(user?.role)
+        ? user.role.includes("admin")
+        : user?.role === "admin";
+
+      const preview = await this.documentService.getDocumentPreview(
+        req.params.id,
+        user?.id,
+        isAdmin
+      );
+
+      return res.json(preview);
+    } catch (err) {
+      console.error("Error fetching document preview:", err);
       return res.status(403).json({ error: err.message });
     }
   }
@@ -192,16 +262,25 @@ export class DocumentController {
   // =====================================================
   async search(req, res) {
     try {
+      const queryStr = (req.query.query || "").trim();
+      const limit = Math.max(Number(req.query.limit) || 10, 1);
+      const offset = Math.max(Number(req.query.offset) || 0, 0);
+
+      if (!queryStr) return res.json([]);
+
       const results = await this.documentService.searchDocuments(
-        req.query,
-        req.user?.id
+        queryStr,
+        req.user?.id,
+        { limit, offset }
       );
+
       return res.json(results);
     } catch (err) {
+      console.error("Search error:", err);
       return res.status(400).json({ error: err.message });
     }
   }
-
+  
   // =====================================================
   // TAGS
   // =====================================================

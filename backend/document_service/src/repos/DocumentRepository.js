@@ -54,29 +54,26 @@ export default class DocumentRepository extends BaseRepository {
     return rows.map((r) => new Document(r));
   }
 
-async findHomeFeed({ user_id, groupIds = [], limit = 50, offset = 0 } = {}) {
-  if (!user_id) {
-    // Guest → fallback sang public feed
-    return this.findPublicFeed({ limit, offset });
-  }
+  async findHomeFeed({ user_id, groupIds = [], limit = 50, offset = 0 } = {}) {
+    if (!user_id) {
+      return this.findPublicFeed({ limit, offset });
+    }
 
-  limit = Number(limit) || 50;
-  offset = Number(offset) || 0;
+    limit = Number(limit) || 50;
+    offset = Number(offset) || 0;
 
-  const params = [user_id]; // loại bỏ document của chính user
+    const params = [user_id];
 
-  // điều kiện nhóm nếu có
-  let groupCondition = "";
-  if (groupIds.length > 0) {
-    const placeholders = groupIds.map(() => "?").join(",");
-    groupCondition = `OR (d.visibility = 'GROUP' AND gd.group_id IN (${placeholders}) AND gd.status = 'APPROVED')`;
-    params.push(...groupIds);
-  }
+    let groupCondition = "";
+    if (groupIds.length > 0) {
+      const placeholders = groupIds.map(() => "?").join(",");
+      groupCondition = `OR (d.visibility = 'GROUP' AND gd.group_id IN (${placeholders}) AND gd.status = 'APPROVED')`;
+      params.push(...groupIds);
+    }
 
-  params.push(limit, offset);
+    params.push(limit, offset);
 
-  // SQL lấy document kèm interaction + nhóm
-  const sql = `
+    const sql = `
     SELECT
       d.*,
       gd.group_id,
@@ -103,21 +100,45 @@ async findHomeFeed({ user_id, groupIds = [], limit = 50, offset = 0 } = {}) {
     LIMIT ? OFFSET ?
   `;
 
-  const [rows] = await this.pool.query(sql, params);
+    const [rows] = await this.pool.query(sql, params);
 
-  // lọc lại nhóm để chắc chắn user thực sự thuộc nhóm
-  const groupSet = new Set(groupIds);
-  const filtered = rows.filter((r) => {
-    if (r.visibility === "PUBLIC") return true;
-    if (r.visibility === "GROUP") {
-      return groupSet.has(r.group_id) && r.status === "APPROVED";
-    }
-    return false;
-  });
+    // lọc lại nhóm để chắc chắn user thực sự thuộc nhóm
+    const groupSet = new Set(groupIds);
+    const filtered = rows.filter((r) => {
+      if (r.visibility === "PUBLIC") return true;
+      if (r.visibility === "GROUP") {
+        return groupSet.has(r.group_id) && r.status === "APPROVED";
+      }
+      return false;
+    });
 
-  // map thành object Document
-  return filtered.map((r) => new Document(r));
-}
+    // map thành object Document
+    return filtered.map((r) => new Document(r));
+  }
+
+  async findAllDocuments({ limit = 50, offset = 0 } = {}) {
+    const [rows] = await this.pool.query(
+      `
+    SELECT 
+        d.*,
+        gd.group_id
+    FROM documents d
+    LEFT JOIN group_documents gd 
+        ON gd.document_id = d.id AND gd.status = 'APPROVED'
+    ORDER BY d.created_at DESC
+    LIMIT ? OFFSET ?
+    `,
+      [limit, offset]
+    );
+
+    return rows.map((r) => {
+      const doc = new Document(r);
+      return {
+        ...doc.toJSON(),
+        group_id: r.group_id ?? null,
+      };
+    });
+  }
 
   /** List documents of owner */
   async findAllOfOwner(owner_id, { limit = 50, offset = 0 } = {}) {
@@ -137,67 +158,56 @@ async findHomeFeed({ user_id, groupIds = [], limit = 50, offset = 0 } = {}) {
     return rows.map((r) => new Document(r));
   }
 
-  /** Advanced search */
-  async search({
-    keyword = null,
-    tags = [],
-    tagsMode = "OR",
-    owner_id = null,
-    visibility = null,
-    page = 1,
-    limit = 20,
-  } = {}) {
-    const offset = (page - 1) * limit;
-    const params = [];
-    const whereClauses = [];
+async searchByKeyword(keyword, limit = 10, offset = 0) {
+  if (!keyword) return [];
 
-    if (owner_id) {
-      whereClauses.push("d.owner_id = ?");
-      params.push(owner_id);
-    }
-    if (visibility) {
-      whereClauses.push("d.visibility = ?");
-      params.push(visibility);
-    }
-    if (keyword) {
-      whereClauses.push("(d.title LIKE ? OR d.description LIKE ?)");
-      params.push(`%${keyword}%`, `%${keyword}%`);
-    }
+  const sql = `
+  SELECT *
+  FROM (
+    SELECT t.*,
+           ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY t.priority ASC) AS rn
+    FROM (
+      -- 1. title match
+      SELECT d.id, d.owner_id, d.title, d.description, d.visibility, d.file_name,
+             d.storage_path, d.created_at, d.updated_at, 1 AS priority
+      FROM documents d
+      WHERE d.title LIKE ?
 
-    let sql = `SELECT DISTINCT d.* FROM documents d`;
+      UNION ALL
 
-    if (tags && tags.length) {
-      sql += ` JOIN document_tags dt ON dt.document_id = d.id`;
-    } else {
-      sql += ` LEFT JOIN document_tags dt ON dt.document_id = d.id`;
-    }
+      -- 2. tag match
+      SELECT d.id, d.owner_id, d.title, d.description, d.visibility, d.file_name,
+             d.storage_path, d.created_at, d.updated_at, 2 AS priority
+      FROM documents d
+      JOIN document_tags dt ON dt.document_id = d.id
+      WHERE dt.tag LIKE ?
 
-    sql += ` LEFT JOIN group_documents gd ON gd.document_id = d.id`;
+      UNION ALL
 
-    if (whereClauses.length) {
-      sql += ` WHERE ` + whereClauses.join(" AND ");
-    }
+      -- 3. description match
+      SELECT d.id, d.owner_id, d.title, d.description, d.visibility, d.file_name,
+             d.storage_path, d.created_at, d.updated_at, 3 AS priority
+      FROM documents d
+      WHERE d.description LIKE ?
+    ) AS t
+  ) AS t2
+  WHERE t2.rn = 1
+  ORDER BY created_at DESC
+  LIMIT ? OFFSET ?;
+  `;
 
-    if (tags && tags.length) {
-      const placeholders = tags.map(() => "?").join(", ");
-      params.push(...tags);
-      if (tagsMode === "AND") {
-        sql +=
-          (whereClauses.length ? " AND " : " WHERE ") +
-          ` dt.tag IN (${placeholders}) GROUP BY d.id HAVING COUNT(DISTINCT dt.tag) = ${tags.length}`;
-      } else {
-        sql +=
-          (whereClauses.length ? " AND " : " WHERE ") +
-          ` dt.tag IN (${placeholders})`;
-      }
-    }
+  const params = [
+    `%${keyword}%`,
+    `%${keyword}%`,
+    `%${keyword}%`,
+    limit,
+    offset,
+  ];
 
-    sql += ` ORDER BY d.created_at DESC LIMIT ? OFFSET ?`;
-    params.push(limit, offset);
+  const [rows] = await this.pool.query(sql, params);
+  return rows;
+}
 
-    const [rows] = await this.pool.query(sql, params);
-    return rows.map((r) => new Document(r));
-  }
 
   /** Update document by id */
   async update(id, updates) {

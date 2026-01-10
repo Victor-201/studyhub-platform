@@ -33,7 +33,6 @@ import { initEventConsumers } from "./core/events/consume.js";
 
 export function createApp() {
   const app = express();
-
   // ===== Middlewares =====
   app.use(helmet());
   app.use(cors());
@@ -71,6 +70,7 @@ export function createApp() {
     commentRepo,
     downloadRepo,
     documentRepo,
+    groupDocRepo,
     groupClient,
     outboxRepo,
   });

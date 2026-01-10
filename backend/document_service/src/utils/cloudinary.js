@@ -14,18 +14,23 @@ export function uploadToCloudinary(buffer, options = {}) {
     const stream = cloudinary.v2.uploader.upload_stream(
       {
         resource_type: "raw",
+        type: "upload",
+        delivery_type: "upload",
         folder: "documents",
         public_id,
+        overwrite: true,
+        invalidate: true,
+        access_mode: "public",
         use_filename: true,
         unique_filename: false,
         filename_override: filename,
-        access_mode: "public",
       },
       (err, result) => {
         if (err) return reject(err);
         resolve(result);
       }
     );
+
     stream.end(buffer);
   });
 }
@@ -40,13 +45,20 @@ export function buildPreviewUrl(doc) {
   if (!doc?.storage_path) return null;
 
   const url = doc.storage_path;
-  const ext = getExtensionFromUrl(url);
+  const ext = getExtensionFromUrl(url)?.toLowerCase();
 
-  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return url;
-  if (["mp4", "webm", "mov"].includes(ext)) return url;
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+    return url;
+  }
+
+  if (["mp4", "webm", "mov"].includes(ext)) {
+    return url;
+  }
 
   if (ext === "pdf") {
-    return url.replace("/raw/upload/", "/image/upload/");
+    return `https://docs.google.com/gview?url=${encodeURIComponent(
+      url
+    )}&embedded=true`;
   }
 
   if (["doc", "docx", "ppt", "pptx", "xls", "xlsx"].includes(ext)) {
@@ -56,8 +68,4 @@ export function buildPreviewUrl(doc) {
   }
 
   return null;
-}
-
-export function buildDownloadUrl(doc) {
-  return doc?.storage_path || null;
 }

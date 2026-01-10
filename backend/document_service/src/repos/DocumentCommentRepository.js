@@ -79,13 +79,17 @@ export default class DocumentCommentRepository extends BaseRepository {
     return rows.map((r) => new DocumentComment(r));
   }
 
-  async findAllPaginated({ limit = 50, offset = 0 } = {}) {
-    limit = Number(limit);
-    offset = Number(offset);
-
+ async findAllPaginated({ limit, offset }) {
     const [rows] = await this.pool.query(
       `
-      SELECT *
+      SELECT
+        id,
+        document_id,
+        user_id,
+        content,
+        parent_comment_id,
+        created_at,
+        updated_at
       FROM document_comments
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
@@ -93,7 +97,7 @@ export default class DocumentCommentRepository extends BaseRepository {
       [limit, offset]
     );
 
-    return rows.map((r) => new DocumentComment(r));
+    return rows.map((row) => new DocumentComment(row));
   }
 
   /* ================= UPDATE ================= */

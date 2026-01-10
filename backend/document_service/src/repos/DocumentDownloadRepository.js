@@ -7,14 +7,8 @@ export default class DocumentDownloadRepository extends BaseRepository {
   }
 
   async createDownload(data) {
-    const row = {
-      document_id: data.document_id,
-      user_id: data.user_id,
-      downloaded_at: data.downloaded_at || new Date(),
-    };
-
-    await super.create(row);
-    return new DocumentDownload(row);
+    await super.create(data);
+    return new DocumentDownload(data);
   }
 
   async countDownloads(document_id) {
@@ -27,11 +21,11 @@ export default class DocumentDownloadRepository extends BaseRepository {
 
   async findByDocument(document_id) {
     const rows = await super.findAll({ document_id });
-    return rows.map(r => new DocumentDownload(r));
+    return rows.map((r) => new DocumentDownload(r));
   }
 
   async findByUser(user_id) {
     const rows = await super.findAll({ user_id });
-    return rows.map(r => new DocumentDownload(r));
+    return rows.map((r) => new DocumentDownload(r));
   }
 }
