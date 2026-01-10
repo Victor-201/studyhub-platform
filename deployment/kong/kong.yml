@@ -1,6 +1,7 @@
 _format_version: "3.0"
 _transform: true
 
+# ==================== GLOBAL PLUGINS ====================
 plugins:
   - name: cors
     enabled: true
@@ -20,10 +21,14 @@ plugins:
         - Content-Type
       exposed_headers:
         - X-Auth-Token
+        - X-Filename
+        - Content-Disposition
       credentials: true
       max_age: 3600
 
+# ==================== SERVICES ====================
 services:
+  # ---------- AUTH ----------
   - name: auth-service
     url: http://auth-service:3000
     routes:
@@ -31,8 +36,8 @@ services:
         paths:
           - /api/v1/auth
         strip_path: false
-        preserve_host: false
 
+  # ---------- USER ----------
   - name: user-service
     url: http://user-service:3001
     routes:
@@ -40,8 +45,8 @@ services:
         paths:
           - /api/v1/user
         strip_path: false
-        preserve_host: false
 
+  # ---------- GROUP ----------
   - name: group-service
     url: http://group-service:3002
     routes:
@@ -49,8 +54,8 @@ services:
         paths:
           - /api/v1/group
         strip_path: false
-        preserve_host: false
 
+  # ---------- DOCUMENT ----------
   - name: document-service
     url: http://document-service:3003
     routes:
@@ -58,4 +63,33 @@ services:
         paths:
           - /api/v1/document
         strip_path: false
-        preserve_host: false
+        plugins:
+          - name: proxy-cache
+            enabled: true
+            config:
+              response_code:
+                - 200
+              request_method:
+                - GET
+              content_type:
+                - application/octet-stream
+              cache_ttl: 300
+              strategy: memory
+
+  # ---------- NOTIFICATION ----------
+  - name: notification-service
+    url: http://notification-service:3005
+    routes:
+      - name: notification-route
+        paths:
+          - /api/v1/notification
+        strip_path: false
+
+  # ---------- CHAT ----------
+  - name: chat-service
+    url: http://chat-service:3006
+    routes:
+      - name: chat-route
+        paths:
+          - /api/v1/chat
+        strip_path: false
