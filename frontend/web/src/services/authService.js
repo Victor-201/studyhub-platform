@@ -1,110 +1,138 @@
-// src/services/authService.js
 import apiClient from "@/api/apiClient";
+
+const BASE_URL = "/auth";
 
 const authService = {
   // ===== Auth =====
   register(payload) {
-    return apiClient.post("/auth/register", payload);
+    return apiClient.post(`${BASE_URL}/register`, payload);
   },
 
   verifyEmail(token) {
-    return apiClient.get(`/auth/verify-email?token=${token}`);
+    return apiClient.post(`${BASE_URL}/verify-email?token=${token}`);
   },
 
   login(payload) {
-    return apiClient.post("/auth/login", payload);
+    return apiClient.post(`${BASE_URL}/login`, payload);
   },
 
+  oauthLogin: (data) => apiClient.post(`${BASE_URL}/oauth/login`, data),
+
   refreshToken(refresh_token) {
-    return apiClient.post("/auth/refresh", { refresh_token });
+    return apiClient.post(`${BASE_URL}/refresh`, { refresh_token });
   },
 
   forgotPassword(email) {
-    return apiClient.post("/auth/forgot-password", { email });
+    return apiClient.post(`${BASE_URL}/forgot-password`, { email });
   },
 
   resetPassword(token, new_password) {
-    return apiClient.post("/auth/reset-password", {
+    return apiClient.post(`${BASE_URL}/reset-password`, {
       token,
       new_password,
     });
   },
 
   me() {
-    return apiClient.get("/auth/me");
+    return apiClient.get(`${BASE_URL}/me`);
   },
 
   oauthLogin(provider_name, provider_user) {
-    return apiClient.post("/oauth/login", {
+    return apiClient.post(`${BASE_URL}/oauth/login`, {
       provider_name,
       provider_user,
     });
   },
 
+  logout(refresh_token) {
+    return apiClient.post(`${BASE_URL}/logout`, { refresh_token });
+  },
+
   // ===== User API =====
   getUserProfile() {
-    return apiClient.get("/user/profile");
+    return apiClient.get(`${BASE_URL}/user/profile`);
   },
 
   updateUserProfile(data) {
-    return apiClient.patch("/user/profile", data);
+    return apiClient.patch(`${BASE_URL}/user/profile`, data);
   },
 
   listUserEmails() {
-    return apiClient.get("/user/emails");
+    return apiClient.get(`${BASE_URL}/user/emails`);
   },
 
   addUserEmail(email) {
-    return apiClient.post("/user/emails", { email });
+    return apiClient.post(`${BASE_URL}/user/emails`, { email });
   },
 
   setPrimaryUserEmail(emailId) {
-    return apiClient.patch("/user/emails/primary", { emailId });
+    return apiClient.patch(`${BASE_URL}/user/emails/primary`, { emailId });
   },
 
   // ===== Admin API =====
   countAccounts() {
-    return apiClient.get("/auth/admin/count/accounts");
+    return apiClient.get(`${BASE_URL}/admin/count/accounts`);
   },
 
   listUsers() {
-    return apiClient.get("/admin/users");
+    return apiClient.get(`${BASE_URL}/admin/users`);
   },
 
   lockUser(userId) {
-    return apiClient.post(`/admin/users/${userId}/lock`);
+    return apiClient.post(`${BASE_URL}/admin/users/${userId}/lock`);
   },
 
   unlockUser(userId) {
-    return apiClient.post(`/admin/users/${userId}/unlock`);
+    return apiClient.post(`${BASE_URL}/admin/users/${userId}/unlock`);
   },
 
-  blockUser(userId, reason) {
-    return apiClient.post(`/admin/users/${userId}/block`, { reason });
+  isUserBlocked(userId) {
+    return apiClient.get(`${BASE_URL}/admin/users/${userId}/is_blocked`);
+  },
+
+  permanentBlockUser(userId, reason) {
+    return apiClient.post(`${BASE_URL}/admin/users/${userId}/block`, {
+      reason,
+    });
+  },
+
+  temporaryBlockUser(userId, reason, duration) {
+    return apiClient.post(`${BASE_URL}/admin/users/${userId}/block`, {
+      reason,
+      duration,
+    });
+  },
+
+  unblockUser(userId) {
+    return apiClient.post(`${BASE_URL}/admin/users/${userId}/unblock`);
   },
 
   softDeleteUser(userId, reason) {
-    return apiClient.delete(`/admin/users/${userId}`, { data: { reason } });
+    return apiClient.delete(`${BASE_URL}/admin/users/${userId}`, {
+      data: { reason },
+    });
   },
 
   restoreUser(userId) {
-    return apiClient.post(`/admin/users/${userId}/restore`);
+    return apiClient.post(`${BASE_URL}/admin/users/${userId}/restore`);
   },
 
   updateUserRole(userId, role_name) {
-    return apiClient.patch(`/admin/users/${userId}/role`, { role_name });
+    return apiClient.patch(`${BASE_URL}/admin/users/${userId}/role`, {
+      role_name,
+    });
   },
 
   getAuditLogs() {
-    return apiClient.get("/admin/audit/logs");
+    return apiClient.get(`${BASE_URL}/admin/audit/logs`);
   },
 
   getAuditLogsByActor(actorUserId) {
-    return apiClient.get(`/admin/audit/logs/actor/${actorUserId}`);
+    return apiClient.get(`${BASE_URL}/admin/audit/logs/actor/${actorUserId}`);
   },
 
   getAuditLogsByTarget(targetUserId) {
-    return apiClient.get(`/admin/audit/logs/target/${targetUserId}`);
+    return apiClient.get(`${BASE_URL}/admin/audit/logs/target/${targetUserId}`);
   },
 };
 

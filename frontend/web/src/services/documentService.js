@@ -4,18 +4,12 @@ const BASE = "/document";
 const INTERACT = "/document/interactions";
 
 const documentService = {
-  // =========================
-  // CREATE
-  // =========================
   upload(formData) {
     return apiClient.post(`${BASE}/`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
 
-  // =========================
-  // FEEDS
-  // =========================
   getPublicFeed(params) {
     return apiClient.get(`${BASE}/feed/public`, { params });
   },
@@ -24,9 +18,6 @@ const documentService = {
     return apiClient.get(`${BASE}/feed/home`, { params });
   },
 
-  // =========================
-  // USER DOCUMENTS
-  // =========================
   getMyDocuments() {
     return apiClient.get(`${BASE}/me`);
   },
@@ -35,9 +26,6 @@ const documentService = {
     return apiClient.get(`${BASE}/user/${userId}/public`);
   },
 
-  // =========================
-  // GROUP DOCUMENTS
-  // =========================
   getGroupApproved(groupId) {
     return apiClient.get(`${BASE}/group/${groupId}/approved`);
   },
@@ -46,25 +34,22 @@ const documentService = {
     return apiClient.get(`${BASE}/group/${groupId}/pending`);
   },
 
-  // =========================
-  // SEARCH
-  // =========================
-  search(params) {
-    return apiClient.get(`${BASE}/search`, { params });
+  searchDocuments(query, limit = 10, offset = 0) {
+    return apiClient.get(`${BASE}/search`, {
+      params: { query, limit, offset },
+    });
   },
 
-  // =========================
-  // TAGS
-  // =========================
   getAllTags() {
     return apiClient.get(`${BASE}/tags`);
   },
 
-  // =========================
-  // DETAIL
-  // =========================
   getDocument(id) {
     return apiClient.get(`${BASE}/${id}`);
+  },
+
+  previewDocument(id) {
+    return apiClient.get(`${BASE}/${id}/preview`);
   },
 
   update(id, payload) {
@@ -75,24 +60,26 @@ const documentService = {
     return apiClient.delete(`${BASE}/${id}`);
   },
 
-  // =========================
-  // ADMIN
-  // =========================
-  counts() {
-    return apiClient.get(`${BASE}/admin/counts`);
+  countDocuments() {
+    return apiClient.get(`${BASE}/admin/countDocuments`);
+  },
+
+  countComments() {
+    return apiClient.get(`${BASE}/admin/countComments`);
   },
 
   getApprovedDocuments(params = { limit: 50, offset: 0 }) {
     return apiClient.get(`${BASE}/admin/approved`, { params });
   },
 
-  getAllComments(params = { limit: 50, offset: 0 }) {
-    return apiClient.get(`${INTERACT}/admin/comments`, { params });
+  getAllComments(params) {
+    return apiClient.get(`${BASE}/admin/comments`, { params });
   },
 
-  // =========================
-  // INTERACTIONS
-  // =========================
+  isBookmarked(id) {
+    return apiClient.get(`${INTERACT}/${id}/bookmark`);
+  },
+
   toggleBookmark(id) {
     return apiClient.post(`${INTERACT}/${id}/bookmark`);
   },
@@ -105,7 +92,7 @@ const documentService = {
   },
 
   getCommentsByDocument(id, params = { limit: 50, offset: 0 }) {
-    return apiClient.get(`${INTERACT}/${id}/comments`, { params });
+    return apiClient.get(`${BASE}/${id}/comments`, { params });
   },
 
   deleteComment(commentId) {
@@ -113,7 +100,40 @@ const documentService = {
   },
 
   download(id) {
-    return apiClient.post(`${INTERACT}/${id}/download`);
+    return apiClient
+      .get(`${INTERACT}/${id}/download`, {
+        responseType: "blob",
+      })
+      .then((res) => {
+        const fileName = decodeURIComponent(
+          res.headers["x-filename"] || "download"
+        );
+
+        const url = window.URL.createObjectURL(res.data);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch((err) => {
+        console.error("Download error:", err);
+      });
+  },
+
+  approve(documentId, groupId) {
+    return apiClient.post(`${INTERACT}/${documentId}/approve`, {
+      group_id: groupId,
+    });
+  },
+
+  reject(documentId, groupId) {
+    return apiClient.post(`${INTERACT}/${documentId}/reject`, {
+      group_id: groupId,
+    });
   },
 };
 

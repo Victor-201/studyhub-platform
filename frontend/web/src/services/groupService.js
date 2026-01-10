@@ -30,6 +30,14 @@ const groupService = {
     return apiClient.get(`${GROUPS}/${groupId}/membership`);
   },
 
+  getJoinRequests(groupId, params = {}) {
+    return apiClient.get(`${GROUPS}/${groupId}/requests`, { params });
+  },
+
+  getMyInvites(params = {}) {
+    return apiClient.get(`${GROUPS}/my-invites`, { params });
+  },
+
   join(groupId) {
     return apiClient.post(`${GROUPS}/${groupId}/join`);
   },
@@ -38,12 +46,12 @@ const groupService = {
     return apiClient.delete(`${GROUPS}/${groupId}/join`);
   },
 
-  approveJoin(requestId) {
-    return apiClient.patch(`${GROUPS}/requests/${requestId}/approve`);
+  approveJoin(requestId, groupId) {
+    return apiClient.patch(`${GROUPS}/requests/${groupId}/${requestId}/approve`);
   },
 
-  rejectJoin(requestId) {
-    return apiClient.patch(`${GROUPS}/requests/${requestId}/reject`);
+  rejectJoin(requestId, groupId) {
+    return apiClient.patch(`${GROUPS}/requests/${groupId}/${requestId}/reject`);
   },
 
   checkJoinPending(groupId) {
@@ -55,7 +63,7 @@ const groupService = {
   },
 
   getUserGroups(userId) {
-    return apiClient.get(`${GROUPS}/user/${userId}`, );
+    return apiClient.get(`${GROUPS}/user/${userId}`);
   },
 
   getOwnedGroups() {
@@ -72,7 +80,7 @@ const groupService = {
   },
 
   getAllGroups(params = {}) {
-    return apiClient.get(`${GROUPS}/admin/group`, { params });
+    return apiClient.get(`${GROUPS}/admin`, { params });
   },
 
   countGroups() {

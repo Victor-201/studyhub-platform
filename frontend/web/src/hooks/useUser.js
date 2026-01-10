@@ -98,17 +98,9 @@ export default function useUser() {
 
   const updateAvatar = async (file) => {
     if (!user?.id) throw new Error("No authenticated user");
-    setLoadingProfile(true);
-    try {
-      const res = await userService.updateAvatar(user.id, file);
-      await loadProfile(user.id);
-      return res.data?.profile || null;
-    } catch (err) {
-      setErrorProfile("Không thể cập nhật avatar.");
-      return null;
-    } finally {
-      setLoadingProfile(false);
-    }
+    const res = await userService.updateAvatar(user.id, file);
+    await loadProfile(user.id);
+    return res.data?.profile || null;
   };
 
   const updatePrivacy = async (data) => {
@@ -129,11 +121,11 @@ export default function useUser() {
   // ===================
   // SOCIAL LINKS
   // ===================
-  const addSocial = async (platform, url) => {
+  const addSocial = async (url) => {
     if (!user?.id) throw new Error("No authenticated user");
     setLoadingProfile(true);
     try {
-      await userService.addSocial(user.id, platform, url);
+      await userService.addSocial(user.id, url);
       await loadProfile(user.id);
       return true;
     } catch (err) {
@@ -280,11 +272,13 @@ export default function useUser() {
   // ===================
   // SEARCH USERS
   // ===================
-  const searchUsers = async (query) => {
+  const searchUsers = async (query, limit = 5, offset = 0) => {
+    if (!query || query.trim() === "") return [];
     try {
-      const res = await userService.searchUsers(query);
+      const res = await userService.searchUsers(query, limit, offset);
       return res.data || [];
     } catch (err) {
+      console.error("Error searching users:", err);
       return [];
     }
   };

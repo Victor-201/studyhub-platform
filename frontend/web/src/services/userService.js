@@ -40,9 +40,8 @@ const userService = {
   // ===================
   // SOCIAL LINKS
   // ===================
-  addSocial(user_id, platform, url) {
+  addSocial(user_id, url) {
     return apiClient.post(`${base}/profile/${user_id}/social`, {
-      platform,
       url,
     });
   },
@@ -109,9 +108,11 @@ const userService = {
     return apiClient.get(`${base}/follow/${user_id}/following`);
   },
 
-  searchUsers(query) {
-    const params = new URLSearchParams(query).toString();
-    return apiClient.get(`${base}/profile?${params}`);
+  searchUsers(query, limit = 5, offset = 0) {
+    if (!query || query.trim() === "") return Promise.resolve({ data: [] });
+    return apiClient.get(`${base}/profile/search`, {
+      params: { query, limit, offset },
+    });
   },
 };
 

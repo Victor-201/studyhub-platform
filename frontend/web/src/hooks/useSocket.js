@@ -1,25 +1,71 @@
-import { useEffect, useRef } from "react";
-import { socketInit, connectSocket } from "../utils/socketClient";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { io } from "socket.io-client";
+import { useAuth } from "@/hooks/useAuth";
 
-export const useSocketClient = () => {
+const SOCKET_URL =
+  import.meta.env.VITE_CHAT_SERVICE_URL || "http://localhost:3006";
+
+export default function useSocket() {
+  const { user, accessToken } = useAuth();
   const socketRef = useRef(null);
+  const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    // Tạo socket chỉ 1 lần khi mount
-    if (!socketRef.current) {
-      const socket = socketInit("http://localhost:8000", "/socket.io");
-      connectSocket(socket);
-      socketRef.current = socket;
+    if (!user || !accessToken) return;
+
+    // cleanup socket cũ nếu có
+    if (socketRef.current) {
+      socketRef.current.disconnect();
     }
 
-    // Cleanup khi component unmount
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket"],
+      auth: { token: accessToken },
+      autoConnect: true,
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      setConnected(true);
+      console.log("[Socket] Connected:", socket.id);
+    });
+
+    socket.on("disconnect", () => {
+      setConnected(false);
+      console.log("[Socket] Disconnected");
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("[Socket] Error:", err.message);
+    });
+
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
+      socket.off();
+      socket.disconnect();
+      socketRef.current = null;
+      setConnected(false);
     };
+  }, [user?.id, accessToken]);
+
+  // ================= EMIT =================
+  const emit = useCallback((event, payload) => {
+    socketRef.current?.emit(event, payload);
   }, []);
 
-  return socketRef.current;
-};
+  // ================= ON / OFF =================
+  const on = useCallback((event, cb) => {
+    socketRef.current?.on(event, cb);
+  }, []);
+
+  const off = useCallback((event, cb) => {
+    socketRef.current?.off(event, cb);
+  }, []);
+
+  return {
+    connected,
+    emit,
+    on,
+    off,
+  };
+}

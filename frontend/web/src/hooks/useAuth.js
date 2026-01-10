@@ -24,10 +24,18 @@ export const useAuth = () => {
   const listUsers = useCallback(() => authService.listUsers(), []);
   const lockUser = useCallback((id) => authService.lockUser(id), []);
   const unlockUser = useCallback((id) => authService.unlockUser(id), []);
-  const blockUser = useCallback(
-    (id, reason) => authService.blockUser(id, reason),
+  const checkIfUserBlocked = useCallback(
+    (id) => authService.isUserBlocked(id),
     []
   );
+
+  const blockUser = useCallback((id, reason, duration = null) => {
+    if (duration) {
+      return authService.temporaryBlockUser(id, reason, duration);
+    }
+    return authService.permanentBlockUser(id, reason);
+  }, []);
+  const unblockUser = useCallback((id) => authService.unblockUser(id), []);
   const softDeleteUser = useCallback(
     (id, reason) => authService.softDeleteUser(id, reason),
     []
@@ -58,7 +66,9 @@ export const useAuth = () => {
     listUsers,
     lockUser,
     unlockUser,
+    checkIfUserBlocked,
     blockUser,
+    unblockUser,
     softDeleteUser,
     restoreUser,
     updateUserRole,

@@ -6,18 +6,53 @@ export default function useDocument(documentId = null) {
   const [loading, setLoading] = useState(false);
   const [allTags, setAllTags] = useState([]);
   const [tagsLoaded, setTagsLoaded] = useState(false);
+  const [previewCache, setPreviewCache] = useState({});
+
+  const [bookmarking, setBookmarking] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   // =========================
   // LOAD DETAIL
   // =========================
   const loadDocument = async (id = documentId) => {
-    if (!id) return;
+    if (!id) return null;
+
     setLoading(true);
     try {
       const res = await documentService.getDocument(id);
-      setDocument(res.data);
+      const doc = res.data;
+
+      setDocument(doc);
+      return doc;
+    } catch (err) {
+      console.error(err);
+      return null;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDocumentPreview = async (id = documentId) => {
+    if (!id) return null;
+
+    if (previewCache[id]) {
+      return previewCache[id];
+    }
+
+    try {
+      const res = await documentService.previewDocument(id);
+      const url = res.data?.preview_url || null;
+
+      if (url) {
+        setPreviewCache((prev) => ({
+          ...prev,
+          [id]: url,
+        }));
+      }
+
+      return url;
+    } catch {
+      return null;
     }
   };
 
@@ -46,11 +81,11 @@ export default function useDocument(documentId = null) {
     }
   };
 
-  const deleteDocument = async () => {
-    if (!documentId) return;
+  const deleteDocument = async (id) => {
+    if (!id) return;
     setLoading(true);
     try {
-      await documentService.remove(documentId);
+      await documentService.remove(id);
     } finally {
       setLoading(false);
     }
@@ -79,7 +114,11 @@ export default function useDocument(documentId = null) {
   // =========================
   // SEARCH
   // =========================
-  const searchDocuments = (params) => documentService.search(params);
+  const searchDocuments = async (query, limit = 5, offset = 0) => {
+    if (!query) return [];
+    const res = await documentService.searchDocuments(query, limit, offset);
+    return res.data || [];
+  };
 
   // =========================
   // TAGS
@@ -96,15 +135,24 @@ export default function useDocument(documentId = null) {
     return tags;
   };
 
-  // =========================
-  // ADMIN
-  // =========================
-  const getCounts = async () => {
-    const res = await documentService.counts();
-    return {
-      documents: res.data?.countDocuments ?? 0,
-      comments: res.data?.countComments ?? 0,
-    };
+  const getDocumentCount = async () => {
+    try {
+      const res = await documentService.countDocuments();
+      return res.data?.countDocuments ?? 0;
+    } catch (err) {
+      console.error("Lỗi lấy số lượng tài liệu:", err);
+      return 0;
+    }
+  };
+
+  const getCommentCount = async () => {
+    try {
+      const res = await documentService.countComments();
+      return res.data?.countComments ?? 0;
+    } catch (err) {
+      console.error("Lỗi lấy số lượng bình luận:", err);
+      return 0;
+    }
   };
 
   const getApprovedDocuments = (params = { limit: 50, offset: 0 }) =>
@@ -119,35 +167,72 @@ export default function useDocument(documentId = null) {
     return res.data || [];
   };
 
-  const getAllComments = (params = { limit: 50, offset: 0 }) =>
-    documentService.getAllComments(params);
+  const getAllComments = (params) => documentService.getAllComments(params);
 
   // =========================
   // INTERACTIONS
   // =========================
-  const toggleBookmark = () => {
-    if (!documentId) return;
-    return documentService.toggleBookmark(documentId);
+  const checkBookmarked = async () => {
+    if (!documentId) return false;
+    const res = await documentService.isBookmarked(documentId);
+    return !!res.data?.bookmarked;
   };
 
-  const addComment = (content, parentId = null) => {
+  const toggleBookmark = async () => {
+    if (!documentId || bookmarking) return;
+    setBookmarking(true);
+    try {
+      await documentService.toggleBookmark(documentId);
+    } finally {
+      setBookmarking(false);
+    }
+  };
+
+  const addComment = async (content, parentId = null) => {
     if (!documentId) return;
     return documentService.addComment(documentId, content, parentId);
   };
 
-  const deleteComment = (commentId) => documentService.deleteComment(commentId);
+  const deleteComment = async (commentId) => {
+    await documentService.deleteComment(commentId);
 
-  const download = () => {
-    if (!documentId) return;
-    documentService.download(documentId);
+    setDocument((prev) => ({
+      ...prev,
+      stats: {
+        ...prev.stats,
+        comments: Math.max(0, prev.stats.comments - 1),
+      },
+    }));
+  };
+
+  const download = async () => {
+    if (!documentId || downloading) return;
+    setDownloading(true);
+    try {
+      await documentService.download(documentId);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const approve = async (documentId, groupId) => {
+    await documentService.approve(documentId, groupId);
+  };
+
+  const reject = async (documentId, groupId) => {
+    await documentService.reject(documentId, groupId);
   };
 
   return {
     loading,
     document,
 
+    bookmarking,
+    downloading,
+
     // detail
     loadDocument,
+    loadDocumentPreview,
 
     // CRUD
     uploadDocument,
@@ -159,6 +244,7 @@ export default function useDocument(documentId = null) {
     getHomeFeed,
     getMyDocuments,
     getUserPublicDocuments,
+    getCommentsByDocument,
 
     // group
     getGroupApproved,
@@ -172,15 +258,18 @@ export default function useDocument(documentId = null) {
     allTags,
 
     // admin
-    getCounts,
+    getDocumentCount,
+    getCommentCount,
     getApprovedDocuments,
     getAllComments,
 
     // interactions
+    checkBookmarked,
     toggleBookmark,
     addComment,
     deleteComment,
     download,
-    getCommentsByDocument,
+    approve,
+    reject,
   };
 }

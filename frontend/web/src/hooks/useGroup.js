@@ -176,17 +176,26 @@ export default function useGroup() {
     }
   }, []);
 
-  const joinGroup = useCallback(async (groupId) => {
-    if (!groupId) return null;
+  const joinGroup = useCallback(
+    async (groupId) => {
+      if (!groupId) return null;
 
-    setLoadingState("action", true);
-    try {
-      const res = await groupService.join(groupId);
-      return res?.data?.data;
-    } finally {
-      setLoadingState("action", false);
-    }
-  }, []);
+      setLoadingState("action", true);
+      try {
+        const res = await groupService.join(groupId);
+        const joinedGroup = res?.data?.data;
+
+        if (joinedGroup) {
+          await loadUserGroups(joinedGroup.user_id || authUser.id);
+        }
+
+        return joinedGroup;
+      } finally {
+        setLoadingState("action", false);
+      }
+    },
+    [loadUserGroups]
+  );
 
   const cancelJoin = useCallback(async (groupId) => {
     if (!groupId) return null;
@@ -200,51 +209,109 @@ export default function useGroup() {
     }
   }, []);
 
-  const leaveGroup = useCallback(async (groupId) => {
-    if (!groupId) return null;
+  const leaveGroup = useCallback(
+    async (groupId, userId) => {
+      if (!groupId || !userId) return null;
 
-    setLoadingState("action", true);
-    try {
-      const res = await groupService.leaveGroup(groupId);
-      return res?.data?.data;
-    } finally {
-      setLoadingState("action", false);
-    }
-  }, []);
+      setLoadingState("action", true);
+      try {
+        const res = await groupService.leaveGroup(groupId);
+        await loadUserGroups(userId);
+        return res?.data?.data;
+      } finally {
+        setLoadingState("action", false);
+      }
+    },
+    [loadUserGroups]
+  );
 
   /* ======================
    * MANAGER / MEMBERS
    * ====================== */
-  const getJoinRequests = useCallback(async (groupId) => {
-    if (!groupId) return [];
 
-    setLoadingState("list", true);
-    try {
-      const res = await groupService.getJoinRequests(groupId);
-      return toArray(res?.data?.data);
-    } finally {
-      setLoadingState("list", false);
-    }
-  }, []);
+  const getJoinRequests = useCallback(
+    async (groupId, params = { limit: 50, offset: 0 }) => {
+      if (!groupId) {
+        return {
+          items: [],
+          total: 0,
+          limit: params.limit ?? 50,
+          offset: params.offset ?? 0,
+        };
+      }
 
-  const approveJoin = useCallback(async (requestId) => {
+      setLoadingState("list", true);
+      try {
+        const res = await groupService.getJoinRequests(groupId, params);
+        return (
+          res?.data?.data ?? {
+            items: [],
+            total: 0,
+            limit: params.limit ?? 50,
+            offset: params.offset ?? 0,
+          }
+        );
+      } catch (err) {
+        console.error("getJoinRequests error:", err);
+        return {
+          items: [],
+          total: 0,
+          limit: params.limit ?? 50,
+          offset: params.offset ?? 0,
+        };
+      } finally {
+        setLoadingState("list", false);
+      }
+    },
+    []
+  );
+
+  const getMyInvites = useCallback(
+    async (params = { limit: 50, offset: 0 }) => {
+      setLoadingState("list", true);
+      try {
+        const res = await groupService.getMyInvites(params);
+        return (
+          res?.data?.data ?? {
+            items: [],
+            total: 0,
+            limit: params.limit ?? 50,
+            offset: params.offset ?? 0,
+          }
+        );
+      } catch (err) {
+        console.error("getMyInvites error:", err);
+        return {
+          items: [],
+          total: 0,
+          limit: params.limit ?? 50,
+          offset: params.offset ?? 0,
+        };
+      } finally {
+        setLoadingState("list", false);
+      }
+    },
+    []
+  );
+
+  const approveJoin = useCallback(async (requestId, groupId) => {
     if (!requestId) return null;
 
     setLoadingState("action", true);
     try {
-      const res = await groupService.approveJoin(requestId);
+      const res = await groupService.approveJoin(requestId, groupId);
       return res?.data?.data;
     } finally {
       setLoadingState("action", false);
     }
   }, []);
 
-  const rejectJoin = useCallback(async (requestId) => {
+  const rejectJoin = useCallback(async (requestId, groupId) => {
     if (!requestId) return null;
 
     setLoadingState("action", true);
     try {
-      const res = await groupService.rejectJoin(requestId);
+      const res = await groupService.rejectJoin(requestId, groupId);
       return res?.data?.data;
     } finally {
       setLoadingState("action", false);
@@ -361,7 +428,7 @@ export default function useGroup() {
    * EXPORT
    * ====================== */
   return {
-    loading, // { list, detail, action }
+    loading,
 
     groups,
     currentGroup,
@@ -383,6 +450,7 @@ export default function useGroup() {
     leaveGroup,
 
     getJoinRequests,
+    getMyInvites,
     approveJoin,
     rejectJoin,
     checkJoinPending,
