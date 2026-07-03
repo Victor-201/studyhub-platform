@@ -1,0 +1,175 @@
+# ══════════════════════════════════════════════════════════════════════
+# studyhub-platform — Production Docker Compose Override
+# Standard: devops.skill.md Section 3.4
+#
+# Usage:
+#   docker compose -f deployment/docker/docker-compose.yml \
+#                  -f deployment/docker/docker-compose.prod.yml \
+#                  up -d
+#
+# This file adds production-only concerns on top of the base compose:
+#   • Resource limits (memory/CPU)
+#   • Restart policies
+#   • No exposed internal ports beyond the Kong proxy
+#   • Production log driver
+# ══════════════════════════════════════════════════════════════════════
+
+services:
+  # ── MySQL databases — tighten resources ───────────────────────────
+  mysql-auth:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mysql-user:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mysql-group:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mysql-document:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── RabbitMQ ───────────────────────────────────────────────────────
+  rabbitmq:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.3'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Backend services ───────────────────────────────────────────────
+  auth-service:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    # Do not expose ports directly in production — route through Kong
+    ports: !reset []
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  user-service:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    ports: !reset []
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  group-service:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    ports: !reset []
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  document-service:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    ports: !reset []
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  notification-service:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    ports: !reset []
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  chat-service:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    ports: !reset []
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Kong API Gateway — only public-facing port ─────────────────────
+  kong:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    # Admin API (8001) must NOT be exposed in production
+    ports:
+      - "80:8000"
+      - "443:8443"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
