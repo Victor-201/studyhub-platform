@@ -3,7 +3,7 @@ import Group from "../models/Group.js";
 
 export default class GroupRepository extends BaseRepository {
   constructor(pool) {
-    super(pool, "`groups`");
+    super(pool, "groups");
   }
 
   async createGroup(data) {
@@ -12,7 +12,7 @@ export default class GroupRepository extends BaseRepository {
   }
 
   async getGroupById(id, user_id = null) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT
       g.id,
       g.name,
@@ -24,12 +24,12 @@ export default class GroupRepository extends BaseRepository {
       g.updated_at,
       COUNT(gm.user_id) AS count_member,
       gm2.role
-    FROM \`groups\` g
+    FROM groups g
     LEFT JOIN group_members gm 
       ON g.id = gm.group_id
     LEFT JOIN group_members gm2 
-      ON g.id = gm2.group_id AND gm2.user_id = ?
-    WHERE g.id = ?
+      ON g.id = gm2.group_id AND gm2.user_id = $1
+    WHERE g.id = $2
     GROUP BY g.id
     LIMIT 1`,
       [user_id, id]
@@ -50,8 +50,8 @@ export default class GroupRepository extends BaseRepository {
   }
 
   async countGroups() {
-    const [rows] = await this.pool.query(
-      `SELECT COUNT(*) AS count FROM \`groups\``
+    const { rows } = await this.pool.query(
+      `SELECT COUNT(*) AS count FROM groups`
     );
     return rows[0].count;
   }
@@ -60,7 +60,7 @@ export default class GroupRepository extends BaseRepository {
     limit = Number(limit);
     offset = Number(offset);
 
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT 
        g.id,
        g.name,
@@ -71,8 +71,8 @@ export default class GroupRepository extends BaseRepository {
        g.created_at,
        g.updated_at,
        owner_table.owner_id AS own_id,
-       IFNULL(member_table.count_member, 0) AS count_member
-     FROM \`groups\` g
+       COALESCE(member_table.count_member, 0) AS count_member
+     FROM groups g
      LEFT JOIN (
        SELECT group_id, user_id AS owner_id
        FROM group_members
@@ -84,7 +84,7 @@ export default class GroupRepository extends BaseRepository {
        GROUP BY group_id
      ) member_table ON g.id = member_table.group_id
      ORDER BY g.created_at DESC
-     LIMIT ? OFFSET ?`,
+     LIMIT $1 OFFSET $2`,
       [limit, offset]
     );
 
@@ -92,16 +92,16 @@ export default class GroupRepository extends BaseRepository {
   }
 
   async findAllGroups({ access, limit = 50, offset = 0 } = {}, user_id = null) {
+    const conditions = [];
     const params = [];
-    let where = "";
+    let idx = 1;
 
     if (access) {
-      where = "WHERE g.access=?";
+      conditions.push(`g.access = $${idx++}`);
       params.push(access);
     }
 
-    const [rows] = await this.pool.query(
-      `SELECT
+    const sql = `SELECT
       g.id,
       g.name,
       g.avatar_url,
@@ -112,22 +112,23 @@ export default class GroupRepository extends BaseRepository {
       g.updated_at,
       COUNT(gm.user_id) AS count_member,
       gm2.role
-    FROM \`groups\` g
+    FROM groups g
     LEFT JOIN group_members gm ON g.id = gm.group_id
     LEFT JOIN group_members gm2 
-      ON g.id = gm2.group_id AND gm2.user_id = ?
-    ${where}
+      ON g.id = gm2.group_id AND gm2.user_id = $${idx}
+    ${conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : ""}
     GROUP BY g.id
     ORDER BY g.created_at DESC
-    LIMIT ? OFFSET ?`,
-      [user_id, ...params, limit, offset]
-    );
+    LIMIT $${idx + 1} OFFSET $${idx + 2}`;
 
+    params.push(user_id, limit, offset);
+
+    const { rows } = await this.pool.query(sql, params);
     return rows;
   }
 
   async findByNameLike(name, { limit = 20, offset = 0 } = {}, user_id = null) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT
       g.id,
       g.name,
@@ -139,14 +140,14 @@ export default class GroupRepository extends BaseRepository {
       g.updated_at,
       COUNT(gm.user_id) AS count_member,
       gm2.role
-    FROM \`groups\` g
+    FROM groups g
     LEFT JOIN group_members gm ON g.id = gm.group_id
     LEFT JOIN group_members gm2 
-      ON g.id = gm2.group_id AND gm2.user_id = ?
-    WHERE g.name LIKE ?
+      ON g.id = gm2.group_id AND gm2.user_id = $1
+    WHERE g.name LIKE $2
     GROUP BY g.id
     ORDER BY g.name ASC
-    LIMIT ? OFFSET ?`,
+    LIMIT $3 OFFSET $4`,
       [user_id, `%${name}%`, limit, offset]
     );
 
@@ -154,7 +155,7 @@ export default class GroupRepository extends BaseRepository {
   }
 
   async findGroupsNotJoined(user_id, { limit = 20, offset = 0 } = {}) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT
       g.id,
       g.name,
@@ -166,14 +167,14 @@ export default class GroupRepository extends BaseRepository {
       g.updated_at,
       COUNT(gm.user_id) AS count_member,
       NULL AS role
-    FROM \`groups\` g
+    FROM groups g
     LEFT JOIN group_members gm ON g.id = gm.group_id
     WHERE g.id NOT IN (
-      SELECT group_id FROM group_members WHERE user_id = ?
+      SELECT group_id FROM group_members WHERE user_id = $1
     )
     GROUP BY g.id
     ORDER BY g.created_at DESC
-    LIMIT ? OFFSET ?`,
+    LIMIT $2 OFFSET $3`,
       [user_id, limit, offset]
     );
 

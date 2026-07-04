@@ -22,11 +22,11 @@ export default class IncomingEventRepository extends BaseRepository {
   }
 
   async getUnconsumed(limit = 50) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT * FROM incoming_events 
        WHERE consumed_at IS NULL 
        ORDER BY created_at ASC 
-       LIMIT ?`,
+       LIMIT $1`,
       [limit]
     );
 
@@ -35,7 +35,7 @@ export default class IncomingEventRepository extends BaseRepository {
 
   async markConsumed(id) {
     await this.pool.query(
-      `UPDATE incoming_events SET consumed_at=? WHERE id=?`,
+      `UPDATE incoming_events SET consumed_at=$1 WHERE id=$2`,
       [new Date(), id]
     );
     return new IncomingEvent(await super.findById(id));
@@ -44,7 +44,7 @@ export default class IncomingEventRepository extends BaseRepository {
   async clearConsumedBefore(date) {
     await this.pool.query(
       `DELETE FROM incoming_events 
-       WHERE consumed_at IS NOT NULL AND consumed_at < ?`,
+       WHERE consumed_at IS NOT NULL AND consumed_at < $1`,
       [date]
     );
   }

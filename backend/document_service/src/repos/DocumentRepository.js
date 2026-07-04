@@ -15,7 +15,7 @@ export default class DocumentRepository extends BaseRepository {
 
   /** Count documents */
   async countAllDocuments() {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       "SELECT COUNT(*) AS count FROM documents"
     );
     return rows[0].count;
@@ -35,8 +35,8 @@ export default class DocumentRepository extends BaseRepository {
     const sql = `
       SELECT 
         d.*,
-        IFNULL(dd.count_download, 0) AS downloads,
-        IFNULL(bm.count_bookmark, 0) AS bookmarks
+        COALESCE(dd.count_download, 0) AS downloads,
+        COALESCE(bm.count_bookmark, 0) AS bookmarks
       FROM documents d
       LEFT JOIN (
         SELECT document_id, COUNT(*) AS count_download
@@ -48,9 +48,9 @@ export default class DocumentRepository extends BaseRepository {
       ) bm ON bm.document_id = d.id
       WHERE d.visibility = 'PUBLIC'
       ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
+      LIMIT $1 OFFSET $2
     `;
-    const [rows] = await this.pool.query(sql, [limit, offset]);
+    const { rows } = await this.pool.query(sql, [limit, offset]);
     return rows.map((r) => new Document(r));
   }
 
@@ -63,10 +63,11 @@ export default class DocumentRepository extends BaseRepository {
     offset = Number(offset) || 0;
 
     const params = [user_id];
+    let paramIdx = 2;
 
     let groupCondition = "";
     if (groupIds.length > 0) {
-      const placeholders = groupIds.map(() => "?").join(",");
+      const placeholders = groupIds.map(() => `$${paramIdx++}`).join(",");
       groupCondition = `OR (d.visibility = 'GROUP' AND gd.group_id IN (${placeholders}) AND gd.status = 'APPROVED')`;
       params.push(...groupIds);
     }
@@ -78,8 +79,8 @@ export default class DocumentRepository extends BaseRepository {
       d.*,
       gd.group_id,
       gd.status,
-      IFNULL(dd.count_download, 0) AS downloads,
-      IFNULL(bm.count_bookmark, 0) AS bookmarks
+      COALESCE(dd.count_download, 0) AS downloads,
+      COALESCE(bm.count_bookmark, 0) AS bookmarks
     FROM documents d
     LEFT JOIN group_documents gd
            ON gd.document_id = d.id
@@ -91,16 +92,16 @@ export default class DocumentRepository extends BaseRepository {
       SELECT document_id, COUNT(*) AS count_bookmark
       FROM document_bookmarks GROUP BY document_id
     ) bm ON bm.document_id = d.id
-    WHERE d.owner_id != ?
+    WHERE d.owner_id != $1
       AND (
             d.visibility = 'PUBLIC'
             ${groupCondition}
           )
-    ORDER BY downloads * 2 + bookmarks * 3 + UNIX_TIMESTAMP(d.created_at)/1000000 + RAND() DESC
-    LIMIT ? OFFSET ?
+    ORDER BY downloads * 2 + bookmarks * 3 + EXTRACT(EPOCH FROM d.created_at)/1000000 + RANDOM() DESC
+    LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
   `;
 
-    const [rows] = await this.pool.query(sql, params);
+    const { rows } = await this.pool.query(sql, params);
 
     // lọc lại nhóm để chắc chắn user thực sự thuộc nhóm
     const groupSet = new Set(groupIds);
@@ -117,17 +118,15 @@ export default class DocumentRepository extends BaseRepository {
   }
 
   async findAllDocuments({ limit = 50, offset = 0 } = {}) {
-    const [rows] = await this.pool.query(
-      `
-    SELECT 
+    const { rows } = await this.pool.query(
+      `SELECT 
         d.*,
         gd.group_id
     FROM documents d
     LEFT JOIN group_documents gd 
         ON gd.document_id = d.id AND gd.status = 'APPROVED'
     ORDER BY d.created_at DESC
-    LIMIT ? OFFSET ?
-    `,
+    LIMIT $1 OFFSET $2`,
       [limit, offset]
     );
 
@@ -142,8 +141,8 @@ export default class DocumentRepository extends BaseRepository {
 
   /** List documents of owner */
   async findAllOfOwner(owner_id, { limit = 50, offset = 0 } = {}) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM documents WHERE owner_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM documents WHERE owner_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
       [owner_id, limit, offset]
     );
     return rows.map((r) => new Document(r));
@@ -151,8 +150,8 @@ export default class DocumentRepository extends BaseRepository {
 
   /** Get public documents of a user */
   async findPublicOfUser(owner_id, { limit = 50, offset = 0 } = {}) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM documents WHERE owner_id = ? AND visibility = 'PUBLIC' ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM documents WHERE owner_id = $1 AND visibility = 'PUBLIC' ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
       [owner_id, limit, offset]
     );
     return rows.map((r) => new Document(r));
@@ -171,7 +170,7 @@ async searchByKeyword(keyword, limit = 10, offset = 0) {
       SELECT d.id, d.owner_id, d.title, d.description, d.visibility, d.file_name,
              d.storage_path, d.created_at, d.updated_at, 1 AS priority
       FROM documents d
-      WHERE d.title LIKE ?
+      WHERE d.title LIKE $1
 
       UNION ALL
 
@@ -180,7 +179,7 @@ async searchByKeyword(keyword, limit = 10, offset = 0) {
              d.storage_path, d.created_at, d.updated_at, 2 AS priority
       FROM documents d
       JOIN document_tags dt ON dt.document_id = d.id
-      WHERE dt.tag LIKE ?
+      WHERE dt.tag LIKE $2
 
       UNION ALL
 
@@ -188,12 +187,12 @@ async searchByKeyword(keyword, limit = 10, offset = 0) {
       SELECT d.id, d.owner_id, d.title, d.description, d.visibility, d.file_name,
              d.storage_path, d.created_at, d.updated_at, 3 AS priority
       FROM documents d
-      WHERE d.description LIKE ?
+      WHERE d.description LIKE $3
     ) AS t
   ) AS t2
   WHERE t2.rn = 1
   ORDER BY created_at DESC
-  LIMIT ? OFFSET ?;
+  LIMIT $4 OFFSET $5;
   `;
 
   const params = [
@@ -204,7 +203,7 @@ async searchByKeyword(keyword, limit = 10, offset = 0) {
     offset,
   ];
 
-  const [rows] = await this.pool.query(sql, params);
+  const { rows } = await this.pool.query(sql, params);
   return rows;
 }
 

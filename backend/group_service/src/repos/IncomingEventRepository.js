@@ -26,8 +26,8 @@ export default class IncomingEventRepository extends BaseRepository {
   }
 
   async findUnconsumed({ limit = 50 } = {}) {
-    const sql = `SELECT * FROM ${this.table} WHERE consumed_at IS NULL ORDER BY created_at ASC LIMIT ?`;
-    const [rows] = await this.pool.query(sql, [limit]);
+    const sql = `SELECT * FROM ${this.table} WHERE consumed_at IS NULL ORDER BY created_at ASC LIMIT $1`;
+    const { rows } = await this.pool.query(sql, [limit]);
     return rows.map(r => new IncomingEvent(r));
   }
 }

@@ -1,7 +1,7 @@
 {
-  "name": "user-service",
+  "name": "group-service",
   "version": "1.0.0",
-  "description": "User Service for StudyHub Platform - profile, follow, search, privacy, social links, interests",
+  "description": "Group Service for StudyHub Platform",
   "main": "src/index.js",
   "type": "module",
   "license": "MIT",
@@ -24,7 +24,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
-    "mysql2": "^3.15.3",
+    "pg": "^8.13.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

@@ -22,7 +22,7 @@ export default class DocumentTagRepository extends BaseRepository {
   }
 
   async getAllTags() {
-    const [rows] = await this.pool.query(`
+    const { rows } = await this.pool.query(`
     SELECT DISTINCT tag
     FROM document_tags
     ORDER BY tag ASC
@@ -33,13 +33,13 @@ export default class DocumentTagRepository extends BaseRepository {
 
   async deleteTag(document_id, tag) {
     await this.pool.query(
-      `DELETE FROM document_tags WHERE document_id = ? AND tag = ?`,
+      `DELETE FROM document_tags WHERE document_id = $1 AND tag = $2`,
       [document_id, tag]
     );
   }
 
   async deleteAllTags(document_id) {
-    await this.pool.query(`DELETE FROM document_tags WHERE document_id = ?`, [
+    await this.pool.query(`DELETE FROM document_tags WHERE document_id = $1`, [
       document_id,
     ]);
   }
@@ -62,11 +62,17 @@ export default class DocumentTagRepository extends BaseRepository {
 
     if (tags.length === 0) return;
 
-    const values = tags.map((tag) => [document_id, tag]);
+    const params = [];
+    const placeholders = [];
+    let idx = 1;
+    for (const tag of tags) {
+      placeholders.push(`($${idx++}, $${idx++})`);
+      params.push(document_id, tag);
+    }
 
     await this.pool.query(
-      `INSERT INTO document_tags (document_id, tag) VALUES ?`,
-      [values]
+      `INSERT INTO document_tags (document_id, tag) VALUES ${placeholders.join(", ")}`,
+      params
     );
   }
 }

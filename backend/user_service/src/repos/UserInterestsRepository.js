@@ -7,8 +7,8 @@ export class UserInterestsRepository extends BaseRepository {
   }
 
   async findByUserId(user_id) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.table} WHERE user_id=?`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM ${this.table} WHERE user_id=$1`,
       [user_id]
     );
 
@@ -17,7 +17,7 @@ export class UserInterestsRepository extends BaseRepository {
 
   async addInterest(user_id, interest, id) {
     await this.pool.query(
-      `INSERT IGNORE INTO ${this.table} (id, user_id, interest) VALUES (?, ?, ?)`,
+      `INSERT INTO ${this.table} (id, user_id, interest) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
       [id, user_id, interest]
     );
 
@@ -31,7 +31,7 @@ export class UserInterestsRepository extends BaseRepository {
 
   async removeInterest(user_id, interest) {
     await this.pool.query(
-      `DELETE FROM ${this.table} WHERE user_id=? AND interest=?`,
+      `DELETE FROM ${this.table} WHERE user_id=$1 AND interest=$2`,
       [user_id, interest]
     );
 

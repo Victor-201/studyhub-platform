@@ -14,64 +14,56 @@ export default class GroupDocumentRepository extends BaseRepository {
   }
 
   async findByGroupAndDocument(group_id, document_id) {
-    const [rows] = await this.pool.query(
-      `
-      SELECT * FROM group_documents
-      WHERE group_id = ? AND document_id = ?
-      LIMIT 1
-      `,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM group_documents
+      WHERE group_id = $1 AND document_id = $2
+      LIMIT 1`,
       [group_id, document_id]
     );
     return rows[0] ? new GroupDocument(rows[0]) : null;
   }
 
   async findGroupsByDocument(document_id) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM group_documents WHERE document_id = ?`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM group_documents WHERE document_id = $1`,
       [document_id]
     );
     return rows.map(r => new GroupDocument(r));
   }
 
   async findApprovedInGroup(group_id, { limit = 50, offset = 0 } = {}) {
-    const [rows] = await this.pool.query(
-      `
-      SELECT d.* FROM documents d
+    const { rows } = await this.pool.query(
+      `SELECT d.* FROM documents d
       JOIN group_documents gd ON gd.document_id = d.id
-      WHERE gd.group_id = ? AND gd.status = 'APPROVED'
+      WHERE gd.group_id = $1 AND gd.status = 'APPROVED'
       ORDER BY d.created_at DESC
-      LIMIT ? OFFSET ?
-      `,
+      LIMIT $2 OFFSET $3`,
       [group_id, limit, offset]
     );
     return rows.map(r => new Document(r));
   }
 
   async findPendingInGroup(group_id, { limit = 50, offset = 0 } = {}) {
-    const [rows] = await this.pool.query(
-      `
-      SELECT d.* FROM documents d
+    const { rows } = await this.pool.query(
+      `SELECT d.* FROM documents d
       JOIN group_documents gd ON gd.document_id = d.id
-      WHERE gd.group_id = ? AND gd.status = 'PENDING'
+      WHERE gd.group_id = $1 AND gd.status = 'PENDING'
       ORDER BY gd.submitted_at ASC
-      LIMIT ? OFFSET ?
-      `,
+      LIMIT $2 OFFSET $3`,
       [group_id, limit, offset]
     );
     return rows.map(r => new Document(r));
   }
 
   async findApprovedByUser(user_id, { limit = 50, offset = 0 } = {}) {
-  const [rows] = await this.pool.query(
-    `
-    SELECT gd.*, d.*
+  const { rows } = await this.pool.query(
+    `SELECT gd.*, d.*
     FROM group_documents gd
     JOIN documents d ON d.id = gd.document_id
-    WHERE gd.submitted_by = ?
+    WHERE gd.submitted_by = $1
       AND gd.status = 'APPROVED'
     ORDER BY d.created_at DESC
-    LIMIT ? OFFSET ?
-    `,
+    LIMIT $2 OFFSET $3`,
     [user_id, limit, offset]
   );
 
@@ -83,28 +75,27 @@ export default class GroupDocumentRepository extends BaseRepository {
 
 
   async listByGroup(group_id, { status = null, limit = 50, offset = 0 } = {}) {
-    let sql = `SELECT * FROM group_documents WHERE group_id = ?`;
+    let idx = 1;
+    let sql = `SELECT * FROM group_documents WHERE group_id = $${idx++}`;
     const params = [group_id];
 
     if (status) {
-      sql += ` AND status = ?`;
+      sql += ` AND status = $${idx++}`;
       params.push(status);
     }
 
-    sql += ` ORDER BY submitted_at DESC LIMIT ? OFFSET ?`;
+    sql += ` ORDER BY submitted_at DESC LIMIT $${idx++} OFFSET $${idx++}`;
     params.push(limit, offset);
 
-    const [rows] = await this.pool.query(sql, params);
+    const { rows } = await this.pool.query(sql, params);
     return rows.map(r => new GroupDocument(r));
   }
 
   async approveDocument(id, reviewer_id) {
     await this.pool.query(
-      `
-      UPDATE group_documents
-      SET status='APPROVED', reviewed_by=?, reviewed_at=?
-      WHERE id=?
-      `,
+      `UPDATE group_documents
+      SET status='APPROVED', reviewed_by=$1, reviewed_at=$2
+      WHERE id=$3`,
       [reviewer_id, new Date(), id]
     );
     return new GroupDocument(await super.findById(id));
@@ -112,11 +103,9 @@ export default class GroupDocumentRepository extends BaseRepository {
 
   async rejectDocument(id, reviewer_id) {
     await this.pool.query(
-      `
-      UPDATE group_documents
-      SET status='REJECTED', reviewed_by=?, reviewed_at=?
-      WHERE id=?
-      `,
+      `UPDATE group_documents
+      SET status='REJECTED', reviewed_by=$1, reviewed_at=$2
+      WHERE id=$3`,
       [reviewer_id, new Date(), id]
     );
     return new GroupDocument(await super.findById(id));

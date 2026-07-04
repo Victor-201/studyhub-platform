@@ -12,8 +12,8 @@ export default class GroupJoinRequestRepository extends BaseRepository {
   }
 
   async get(group_id, user_id) {
-    const [rows] = await this.pool.query(
-      "SELECT * FROM group_join_requests WHERE group_id=? AND user_id=?",
+    const { rows } = await this.pool.query(
+      "SELECT * FROM group_join_requests WHERE group_id=$1 AND user_id=$2",
       [group_id, user_id]
     );
     return rows[0] ? new GroupJoinRequest(rows[0]) : null;
@@ -37,13 +37,13 @@ export default class GroupJoinRequestRepository extends BaseRepository {
     limit = Math.max(1, Number(limit) || 50);
     offset = Math.max(0, Number(offset) || 0);
 
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT *
        FROM group_join_requests
-       WHERE group_id = ?
+       WHERE group_id = $1
          AND status = 'PENDING'
        ORDER BY requested_at ASC
-       LIMIT ? OFFSET ?`,
+       LIMIT $2 OFFSET $3`,
       [group_id, limit, offset]
     );
 
@@ -53,23 +53,23 @@ export default class GroupJoinRequestRepository extends BaseRepository {
     limit = Math.max(1, Number(limit) || 50);
     offset = Math.max(0, Number(offset) || 0);
 
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT *
        FROM group_join_requests
-       WHERE user_id = ?
+       WHERE user_id = $1
          AND status = 'INVITED'
        ORDER BY requested_at DESC
-       LIMIT ? OFFSET ?`,
+       LIMIT $2 OFFSET $3`,
       [user_id, limit, offset]
     );
 
     return rows.map((r) => new GroupJoinRequest(r));
   }
   async countPending(group_id) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT COUNT(*) AS total
        FROM group_join_requests
-       WHERE group_id = ?
+       WHERE group_id = $1
          AND status = 'PENDING'`,
       [group_id]
     );
@@ -78,10 +78,10 @@ export default class GroupJoinRequestRepository extends BaseRepository {
   }
 
   async countInvitesByUser(user_id) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT COUNT(*) AS total
        FROM group_join_requests
-       WHERE user_id = ?
+       WHERE user_id = $1
          AND status = 'INVITED'`,
       [user_id]
     );

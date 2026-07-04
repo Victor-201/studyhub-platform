@@ -22,8 +22,8 @@ export class SessionRepository extends BaseRepository {
   }
 
   async findByRefreshTokenHash(refresh_token_hash) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.table} WHERE refresh_token_hash = ? LIMIT 1`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM ${this.table} WHERE refresh_token_hash = $1 LIMIT 1`,
       [refresh_token_hash]
     );
     return rows.length ? new Session(rows[0]) : null;

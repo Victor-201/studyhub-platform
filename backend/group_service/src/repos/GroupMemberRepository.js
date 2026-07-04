@@ -12,8 +12,8 @@ export default class GroupMemberRepository extends BaseRepository {
   }
 
   async getMember(group_id, user_id) {
-    const [rows] = await this.pool.query(
-      "SELECT * FROM group_members WHERE group_id=? AND user_id=?",
+    const { rows } = await this.pool.query(
+      "SELECT * FROM group_members WHERE group_id=$1 AND user_id=$2",
       [group_id, user_id]
     );
     return rows[0] ? new GroupMember(rows[0]) : null;
@@ -21,7 +21,7 @@ export default class GroupMemberRepository extends BaseRepository {
 
   async updateRole(group_id, user_id, role) {
     await this.pool.query(
-      "UPDATE group_members SET role=? WHERE group_id=? AND user_id=?",
+      "UPDATE group_members SET role=$1 WHERE group_id=$2 AND user_id=$3",
       [role, group_id, user_id]
     );
     return this.getMember(group_id, user_id);
@@ -29,34 +29,43 @@ export default class GroupMemberRepository extends BaseRepository {
 
   async removeMember(group_id, user_id) {
     await this.pool.query(
-      "DELETE FROM group_members WHERE group_id=? AND user_id=?",
+      "DELETE FROM group_members WHERE group_id=$1 AND user_id=$2",
       [group_id, user_id]
     );
   }
 
   async list(group_id, role, { limit = 50, offset = 0 } = {}) {
-    let sql = "SELECT * FROM group_members WHERE group_id=?";
-    const params = [group_id];
+    const params = [];
+    let idx = 1;
+
+    let sql = `SELECT * FROM group_members WHERE group_id=$${idx++}`;
+    params.push(group_id);
+
     if (role) {
-      sql += " AND role=?";
+      sql += ` AND role=$${idx++}`;
       params.push(role);
     }
-    sql += " ORDER BY joined_at ASC LIMIT ? OFFSET ?";
+
+    sql += ` ORDER BY joined_at ASC LIMIT $${idx++} OFFSET $${idx++}`;
     params.push(limit, offset);
 
-    const [rows] = await this.pool.query(sql, params);
+    const { rows } = await this.pool.query(sql, params);
     return rows.map((r) => new GroupMember(r));
   }
 
   async listGroupsByUser(user_id, options = {}) {
-    const conditions = [`gm.user_id = ?`];
-    const params = [user_id];
+    const conditions = [];
+    const params = [];
+    let idx = 1;
+
+    conditions.push(`gm.user_id = $${idx++}`);
+    params.push(user_id);
 
     if (options.publicOnly) {
       conditions.push(`g.access = 'PUBLIC'`);
     }
 
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT
       g.id,
       g.name,
@@ -68,7 +77,7 @@ export default class GroupMemberRepository extends BaseRepository {
       g.updated_at,
       gm.role,
       COUNT(gm2.user_id) AS count_member
-    FROM \`groups\` g
+    FROM groups g
     JOIN group_members gm ON g.id = gm.group_id
     JOIN group_members gm2 ON g.id = gm2.group_id
     WHERE ${conditions.join(" AND ")}
@@ -80,7 +89,7 @@ export default class GroupMemberRepository extends BaseRepository {
   }
 
   async listOwnedGroups(user_id) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT
       g.id,
       g.name,
@@ -92,9 +101,9 @@ export default class GroupMemberRepository extends BaseRepository {
       g.updated_at,
       gm.role,
       COUNT(gm2.user_id) AS count_member
-    FROM \`groups\` g
+    FROM groups g
     JOIN group_members gm 
-      ON g.id = gm.group_id AND gm.user_id = ? AND gm.role = 'OWNER'
+      ON g.id = gm.group_id AND gm.user_id = $1 AND gm.role = 'OWNER'
     JOIN group_members gm2 ON g.id = gm2.group_id
     GROUP BY g.id, gm.role`,
       [user_id]

@@ -1,28 +1,30 @@
-import mysql from "mysql2/promise";
+import pg from "pg";
 import { env } from "./env.js";
 
-export const pool = mysql.createPool({
+export const pool = new pg.Pool({
   host: env.DB_HOST,
   user: env.DB_USER,
   password: env.DB_PASS,
   database: env.DB_NAME,
-  port: Number(env.DB_PORT) || 3306,
-  waitForConnections: true,
-  connectionLimit: Number(env.DB_POOL_SIZE) || 10,
-  connectTimeout: 20000,
-  timezone: "Z", 
+  port: Number(env.DB_PORT) || 5432,
+  max: Number(env.DB_POOL_SIZE) || 10,
+  connectionTimeoutMillis: 20000,
 });
 
+pool.on("error", (err) => {
+  console.error("[PostgreSQL] Pool error:", err);
+});
 
 export async function testConnection() {
-  let conn;
+  let client;
   try {
-    conn = await pool.getConnection();
-    console.log("[MySQL] Connection successful!");
+    client = await pool.connect();
+    await client.query("SELECT 1");
+    console.log("[PostgreSQL] Connection successful!");
   } catch (err) {
-    console.error("[MySQL] Connection failed:", err);
+    console.error("[PostgreSQL] Connection failed:", err);
   } finally {
-    if (conn) conn.release();
+    if (client) client.release();
   }
 }
 

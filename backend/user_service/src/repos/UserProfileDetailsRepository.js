@@ -11,8 +11,8 @@ export class UserProfileDetailsRepository extends BaseRepository {
   }
 
   async findByUserId(user_id) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.table} WHERE user_id = ?`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM ${this.table} WHERE user_id = $1`,
       [user_id]
     );
     return rows.length ? new UserProfileDetails(rows[0]) : null;
@@ -22,7 +22,7 @@ export class UserProfileDetailsRepository extends BaseRepository {
   // OWNER: full profile (ignore privacy)
   // =====================================================
   async findOwnerProfile(userId) {
-    const [rows] = await this.pool.query(`
+    const { rows } = await this.pool.query(`
       SELECT
         u.id,
         u.display_name,
@@ -49,8 +49,8 @@ export class UserProfileDetailsRepository extends BaseRepository {
         ups.allow_tagging,
 
         COALESCE((
-          SELECT JSON_ARRAYAGG(
-            JSON_OBJECT(
+          SELECT json_agg(
+            json_build_object(
               'id', usl.id,
               'platform', usl.platform,
               'url', usl.url
@@ -58,18 +58,18 @@ export class UserProfileDetailsRepository extends BaseRepository {
           )
           FROM user_social_links usl
           WHERE usl.user_id = u.id
-        ), JSON_ARRAY()) AS social_links,
+        ), '[]'::json) AS social_links,
 
         COALESCE((
-          SELECT JSON_ARRAYAGG(ui.interest)
+          SELECT json_agg(ui.interest)
           FROM user_interests ui
           WHERE ui.user_id = u.id
-        ), JSON_ARRAY()) AS interests
+        ), '[]'::json) AS interests
 
       FROM users u
       LEFT JOIN user_profile_details upd ON upd.user_id = u.id
       LEFT JOIN user_privacy_settings ups ON ups.user_id = u.id
-      WHERE u.id = ?
+      WHERE u.id = $1
       LIMIT 1
     `, [userId]);
 
@@ -80,7 +80,7 @@ export class UserProfileDetailsRepository extends BaseRepository {
   // NON-OWNER: respect privacy
   // =====================================================
   async findPublicProfile(user_id) {
-    const [rows] = await this.pool.query(`
+    const { rows } = await this.pool.query(`
       SELECT
         pu.user_id,
         pu.display_name,
@@ -94,8 +94,8 @@ export class UserProfileDetailsRepository extends BaseRepository {
         pu.status,
 
         COALESCE((
-          SELECT JSON_ARRAYAGG(
-            JSON_OBJECT(
+          SELECT json_agg(
+            json_build_object(
               'id', usl.id,
               'platform', usl.platform,
               'url', usl.url
@@ -103,16 +103,16 @@ export class UserProfileDetailsRepository extends BaseRepository {
           )
           FROM user_social_links usl
           WHERE usl.user_id = pu.user_id
-        ), JSON_ARRAY()) AS social_links,
+        ), '[]'::json) AS social_links,
 
         COALESCE((
-          SELECT JSON_ARRAYAGG(ui.interest)
+          SELECT json_agg(ui.interest)
           FROM user_interests ui
           WHERE ui.user_id = pu.user_id
-        ), JSON_ARRAY()) AS interests
+        ), '[]'::json) AS interests
 
       FROM public_user_view pu
-      WHERE pu.user_id = ?
+      WHERE pu.user_id = $1
       LIMIT 1
     `, [user_id]);
 
@@ -122,13 +122,13 @@ export class UserProfileDetailsRepository extends BaseRepository {
   async upsert(details) {
     await this.pool.query(
       `INSERT INTO ${this.table} (user_id, bio, gender, birthday, country, city)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         bio = VALUES(bio),
-         gender = VALUES(gender),
-         birthday = VALUES(birthday),
-         country = VALUES(country),
-         city = VALUES(city)`,
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (user_id) DO UPDATE SET
+         bio = EXCLUDED.bio,
+         gender = EXCLUDED.gender,
+         birthday = EXCLUDED.birthday,
+         country = EXCLUDED.country,
+         city = EXCLUDED.city`,
       [
         details.user_id,
         details.bio,

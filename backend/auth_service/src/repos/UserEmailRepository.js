@@ -7,8 +7,8 @@ export class UserEmailRepository extends BaseRepository {
   }
 
   async findByEmail(email) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.table} WHERE email = ? LIMIT 1`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM ${this.table} WHERE email = $1 LIMIT 1`,
       [email]
     );
     return rows.length ? new UserEmail(rows[0]) : null;
@@ -21,7 +21,7 @@ export class UserEmailRepository extends BaseRepository {
 
   async markPrimary(id, user_id) {
     await this.pool.query(
-      `UPDATE ${this.table} SET type = 'secondary' WHERE user_id = ?`,
+      `UPDATE ${this.table} SET type = 'secondary' WHERE user_id = $1`,
       [user_id]
     );
     await this.updateById(id, { type: 'primary' });

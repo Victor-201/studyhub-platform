@@ -24,11 +24,11 @@ export class IncomingEventRepository extends BaseRepository {
   }
 
   async getUnconsumed(limit = 50) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT * FROM incoming_events 
        WHERE consumed_at IS NULL 
        ORDER BY created_at ASC 
-       LIMIT ?`,
+       LIMIT $1`,
       [limit]
     );
 
@@ -37,7 +37,7 @@ export class IncomingEventRepository extends BaseRepository {
 
   async markConsumed(id) {
     await this.pool.query(
-      `UPDATE incoming_events SET consumed_at=? WHERE id=?`,
+      `UPDATE incoming_events SET consumed_at=$1 WHERE id=$2`,
       [new Date(), id]
     );
 

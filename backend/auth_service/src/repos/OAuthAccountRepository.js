@@ -12,8 +12,8 @@ export class OAuthAccountRepository extends BaseRepository {
   }
 
   async find(provider, provider_user_id) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.table} WHERE provider = ? AND provider_user_id = ? LIMIT 1`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM ${this.table} WHERE provider = $1 AND provider_user_id = $2 LIMIT 1`,
       [provider, provider_user_id]
     );
     return rows.length ? new OAuthAccount(rows[0]) : null;

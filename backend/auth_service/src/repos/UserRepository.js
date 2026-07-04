@@ -17,11 +17,11 @@ export class UserRepository extends BaseRepository {
   }
 
   async findByEmail(email) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT u.* 
        FROM users u
        JOIN user_emails ue ON ue.user_id = u.id
-       WHERE ue.email = ? LIMIT 1`,
+       WHERE ue.email = $1 LIMIT 1`,
       [email]
     );
     return rows.length ? new User(rows[0]) : null;
@@ -33,7 +33,7 @@ export class UserRepository extends BaseRepository {
   }
 
   async findAllForAdmin() {
-    const [rows] = await this.pool.query(`
+    const { rows } = await this.pool.query(`
     SELECT 
       u.id,
       u.user_name,
@@ -42,7 +42,7 @@ export class UserRepository extends BaseRepository {
       u.created_at,
       u.updated_at,
       ue.email AS primary_email,
-      GROUP_CONCAT(r.name) AS roles
+       STRING_AGG(r.name, ',') AS roles
     FROM users u
     LEFT JOIN user_emails ue 
       ON ue.user_id = u.id AND ue.type = 'primary'
@@ -71,8 +71,8 @@ export class UserRepository extends BaseRepository {
   }
 
   async countByStatus(status) {
-    const [rows] = await this.pool.query(
-      `SELECT COUNT(*) as count FROM users WHERE status = ?`,
+    const { rows } = await this.pool.query(
+      `SELECT COUNT(*) as count FROM users WHERE status = $1`,
       [status]
     );
     return rows[0].count;

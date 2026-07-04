@@ -13,7 +13,7 @@ export class RolePermissionRepository extends BaseRepository {
 
   async removePermissionFromRole(role_id, permission_id) {
     await this.pool.query(
-      `DELETE FROM ${this.table} WHERE role_id = ? AND permission_id = ?`,
+      `DELETE FROM ${this.table} WHERE role_id = $1 AND permission_id = $2`,
       [role_id, permission_id]
     );
     return true;

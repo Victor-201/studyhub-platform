@@ -26,11 +26,11 @@ export default class OutboxRepository extends BaseRepository {
   }
 
   async findPending(limit = 100) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT * FROM outbox_events 
        WHERE status='pending' 
        ORDER BY created_at ASC 
-       LIMIT ?`,
+       LIMIT $1`,
       [limit]
     );
     return rows.map((r) => new OutboxEvent(r));
@@ -44,15 +44,15 @@ export default class OutboxRepository extends BaseRepository {
   async markPublished(id) {
     await this.pool.query(
       `UPDATE outbox_events 
-       SET status='published', published_at=? 
-       WHERE id=?`,
+       SET status='published', published_at=$1 
+       WHERE id=$2`,
       [new Date(), id]
     );
     return await super.findById(id);
   }
 
   async markFailed(id) {
-    await this.pool.query(`UPDATE outbox_events SET status='failed' WHERE id=?`, [id]);
+    await this.pool.query(`UPDATE outbox_events SET status='failed' WHERE id=$1`, [id]);
     return await super.findById(id);
   }
 }

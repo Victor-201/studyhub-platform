@@ -7,8 +7,8 @@ export class EmailVerificationRepository extends BaseRepository {
   }
 
   async findByHash(token_hash) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.table} WHERE token_hash = ? AND used_at IS NULL LIMIT 1`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM ${this.table} WHERE token_hash = $1 AND used_at IS NULL LIMIT 1`,
       [token_hash]
     );
     return rows.length ? new EmailVerification(rows[0]) : null;

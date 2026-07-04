@@ -12,8 +12,8 @@ export class UserSocialLinksRepository extends BaseRepository {
   }
 
   async findById(id) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.table} WHERE id = ? LIMIT 1`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM ${this.table} WHERE id = $1 LIMIT 1`,
       [id]
     );
 
@@ -21,9 +21,9 @@ export class UserSocialLinksRepository extends BaseRepository {
   }
 
   async findByUserId(user_id) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT * FROM ${this.table}
-       WHERE user_id = ?
+       WHERE user_id = $1
        ORDER BY created_at DESC`,
       [user_id]
     );
@@ -32,9 +32,9 @@ export class UserSocialLinksRepository extends BaseRepository {
   }
 
   async findByUserAndPlatform(user_id, platform) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT * FROM ${this.table}
-       WHERE user_id = ? AND platform = ?
+       WHERE user_id = $1 AND platform = $2
        LIMIT 1`,
       [user_id, platform]
     );

@@ -12,8 +12,8 @@ export default class DocumentDownloadRepository extends BaseRepository {
   }
 
   async countDownloads(document_id) {
-    const [rows] = await this.pool.query(
-      `SELECT COUNT(*) AS total FROM document_downloads WHERE document_id = ?`,
+    const { rows } = await this.pool.query(
+      `SELECT COUNT(*) AS total FROM document_downloads WHERE document_id = $1`,
       [document_id]
     );
     return rows[0]?.total || 0;

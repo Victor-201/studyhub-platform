@@ -4,9 +4,13 @@ export class BaseRepository {
     this.table = table;
   }
 
+  #placeholders(start, count) {
+    return Array.from({ length: count }, (_, i) => `$${start + i}`).join(", ");
+  }
+
   #formatValue(value) {
     if (value instanceof Date) {
-      return value.toISOString().slice(0, 19).replace("T", " ");
+      return value.toISOString();
     }
     return value;
   }
@@ -14,18 +18,16 @@ export class BaseRepository {
   async create(data) {
     const keys = Object.keys(data);
     const values = Object.values(data).map(v => this.#formatValue(v));
-
-    const placeholders = keys.map(() => "?").join(", ");
-    const columns = keys.join(",");
-
-    const sql = `INSERT INTO ${this.table} (${columns}) VALUES (${placeholders})`;
-    await this.pool.query(sql, values);
-    return data;
+    const cols = keys.join(",");
+    const placeholders = this.#placeholders(1, keys.length);
+    const sql = `INSERT INTO ${this.table} (${cols}) VALUES (${placeholders}) RETURNING *`;
+    const { rows } = await this.pool.query(sql, values);
+    return rows[0];
   }
 
   async findById(id) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.table} WHERE id = ? LIMIT 1`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM ${this.table} WHERE id = $1 LIMIT 1`,
       [id]
     );
     return rows[0] || null;
@@ -35,9 +37,10 @@ export class BaseRepository {
     let sql = `SELECT * FROM ${this.table}`;
     const values = [];
     const conditions = [];
+    let idx = 1;
 
     for (const key in where) {
-      conditions.push(`${key} = ?`);
+      conditions.push(`${key} = $${idx++}`);
       values.push(where[key]);
     }
 
@@ -47,22 +50,21 @@ export class BaseRepository {
 
     sql += ` ORDER BY ${orderBy}`;
 
-    const [rows] = await this.pool.query(sql, values);
+    const { rows } = await this.pool.query(sql, values);
     return rows;
   }
 
   async updateById(id, data) {
     const keys = Object.keys(data);
     const values = Object.values(data).map(v => this.#formatValue(v));
-    const setString = keys.map((key) => `${key} = ?`).join(", ");
-
-    const sql = `UPDATE ${this.table} SET ${setString} WHERE id = ?`;
-    await this.pool.query(sql, [...values, id]);
-    return true;
+    const setString = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
+    const sql = `UPDATE ${this.table} SET ${setString} WHERE id = $${keys.length + 1} RETURNING *`;
+    const { rows } = await this.pool.query(sql, [...values, id]);
+    return rows[0] || null;
   }
 
   async deleteById(id) {
-    await this.pool.query(`DELETE FROM ${this.table} WHERE id = ?`, [id]);
-    return true;
+    const { rowCount } = await this.pool.query(`DELETE FROM ${this.table} WHERE id = $1`, [id]);
+    return rowCount > 0;
   }
 }

@@ -7,8 +7,8 @@ export class OAuthProviderRepository extends BaseRepository {
   }
 
   async findByName(name) {
-    const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.table} WHERE name = ? LIMIT 1`,
+    const { rows } = await this.pool.query(
+      `SELECT * FROM ${this.table} WHERE name = $1 LIMIT 1`,
       [name]
     );
     return rows.length ? new OAuthProvider(rows[0]) : null;

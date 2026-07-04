@@ -51,12 +51,11 @@ export class UserRepository extends BaseRepository {
     const sqlName = `
     SELECT *
     FROM public_user_view
-    WHERE display_name LIKE ? OR (full_name IS NOT NULL AND full_name LIKE ?)
+    WHERE display_name LIKE $1 OR (full_name IS NOT NULL AND full_name LIKE $1)
     ORDER BY display_name ASC
-    LIMIT ? OFFSET ?;
+    LIMIT $2 OFFSET $3;
   `;
-    const [nameRows] = await this.pool.query(sqlName, [
-      kw,
+    const { rows: nameRows } = await this.pool.query(sqlName, [
       kw,
       Number(limit),
       Number(offset),
@@ -70,11 +69,11 @@ export class UserRepository extends BaseRepository {
     SELECT pu.*
     FROM public_user_view pu
     JOIN user_interests ui ON ui.user_id = pu.user_id
-    WHERE ui.interest LIKE ?
+    WHERE ui.interest LIKE $1
     ORDER BY pu.display_name ASC
-    LIMIT ? OFFSET ?;
+    LIMIT $2 OFFSET $3;
   `;
-    const [interestRows] = await this.pool.query(sqlInterest, [
+    const { rows: interestRows } = await this.pool.query(sqlInterest, [
       kw,
       Number(limit),
       Number(offset),

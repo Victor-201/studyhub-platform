@@ -18,13 +18,11 @@ export default class DocumentBookmarkRepository extends BaseRepository {
   }
 
   async isBookmarked(user_id, document_id) {
-    const [rows] = await this.pool.query(
-      `
-      SELECT 1
+    const { rows } = await this.pool.query(
+      `SELECT 1
       FROM document_bookmarks
-      WHERE user_id = ? AND document_id = ?
-      LIMIT 1
-      `,
+      WHERE user_id = $1 AND document_id = $2
+      LIMIT 1`,
       [user_id, document_id]
     );
 
@@ -33,7 +31,7 @@ export default class DocumentBookmarkRepository extends BaseRepository {
 
   async deleteBookmark(document_id, user_id) {
     await this.pool.query(
-      `DELETE FROM document_bookmarks WHERE document_id = ? AND user_id = ?`,
+      `DELETE FROM document_bookmarks WHERE document_id = $1 AND user_id = $2`,
       [document_id, user_id]
     );
     return true;
@@ -50,10 +48,10 @@ export default class DocumentBookmarkRepository extends BaseRepository {
   }
 
   async countBookmarks(document_id) {
-    const [rows] = await this.pool.query(
+    const { rows } = await this.pool.query(
       `SELECT COUNT(*) AS total 
      FROM document_bookmarks 
-     WHERE document_id = ?`,
+     WHERE document_id = $1`,
       [document_id]
     );
     return rows[0]?.total || 0;
