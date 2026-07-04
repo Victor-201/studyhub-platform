@@ -12,13 +12,27 @@ services:
         sync: false
       - key: DB_PORT
         value: "5432"
-      - key: DB_USERNAME
+      - key: DB_USER
         sync: false
-      - key: DB_PASSWORD
+      - key: DB_PASS
         sync: false
       - key: DB_NAME
         value: studyhub_auth_db
       - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CLIENT_ID
+        sync: false
+      - key: CLIENT_SECRET
+        sync: false
+      - key: REFRESH_TOKEN
+        sync: false
+      - key: GMAIL_USER
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: RABBITMQ_URL
         sync: false
       - key: REDIS_HOST
         sync: false
@@ -40,13 +54,23 @@ services:
         sync: false
       - key: DB_PORT
         value: "5432"
-      - key: DB_USERNAME
+      - key: DB_USER
         sync: false
-      - key: DB_PASSWORD
+      - key: DB_PASS
         sync: false
       - key: DB_NAME
         value: studyhub_user_db
       - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RABBITMQ_URL
         sync: false
 
   - type: web
@@ -62,13 +86,23 @@ services:
         sync: false
       - key: DB_PORT
         value: "5432"
-      - key: DB_USERNAME
+      - key: DB_USER
         sync: false
-      - key: DB_PASSWORD
+      - key: DB_PASS
         sync: false
       - key: DB_NAME
         value: studyhub_group_db
       - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RABBITMQ_URL
         sync: false
 
   - type: web
@@ -84,13 +118,25 @@ services:
         sync: false
       - key: DB_PORT
         value: "5432"
-      - key: DB_USERNAME
+      - key: DB_USER
         sync: false
-      - key: DB_PASSWORD
+      - key: DB_PASS
         sync: false
       - key: DB_NAME
         value: studyhub_document_db
       - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RABBITMQ_URL
+        sync: false
+      - key: GroupService
         sync: false
 
   - type: web
