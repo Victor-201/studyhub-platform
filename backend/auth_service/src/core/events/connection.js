@@ -11,6 +11,10 @@ export const EXCHANGE = env.RABBITMQ_EXCHANGE || "studyhub_exchange";
  */
 export async function initRabbitConnection() {
   if (connection && channel) return { connection, channel };
+  if (!env.RABBITMQ_URL) {
+    console.log("[RABBIT] RABBITMQ_URL not configured, skipping");
+    return { connection: null, channel: null };
+  }
 
   connection = await amqp.connect(env.RABBITMQ_URL);
   channel = await connection.createChannel();

@@ -8,7 +8,11 @@ const PORT = env.PORT || 3002;
 (async () => {
   try {
     // ===== Init RabbitMQ BEFORE starting app =====
-    await initRabbitConnection();
+    try {
+      await initRabbitConnection();
+    } catch (err) {
+      console.error("[BOOT] RabbitMQ init failed:", err);
+    }
 
     // ===== Create app =====
     const app = createApp();

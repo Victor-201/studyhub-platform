@@ -24,23 +24,28 @@ async function bootstrap() {
   });
 
   // RabbitMQ
-  await initRabbitConnection();
-  await bindQueues();
+  try {
+    const rabbit = await initRabbitConnection();
+    if (rabbit && rabbit.channel) {
+      await bindQueues();
 
-  const userRepo = new UserRepository(pool);
-  const incomingRepo = new IncomingEventRepository(pool);
+      const userRepo = new UserRepository(pool);
+      const incomingRepo = new IncomingEventRepository(pool);
 
-  const incomingEventService = new IncomingEventService({
-    incomingRepo,
-    handlers: {
-      "user.created": userCreated({ userRepo }),
-      "user.deleted": userDeleted({ userRepo }),
-    },
-  });
+      const incomingEventService = new IncomingEventService({
+        incomingRepo,
+        handlers: {
+          "user.created": userCreated({ userRepo }),
+          "user.deleted": userDeleted({ userRepo }),
+        },
+      });
 
-  await initEventConsumers(incomingEventService);
-
-  console.log("[BOOTSTRAP] RabbitMQ started");
+      await initEventConsumers(incomingEventService);
+      console.log("[BOOTSTRAP] RabbitMQ started");
+    }
+  } catch (err) {
+    console.error("[BOOT] RabbitMQ init failed:", err);
+  }
 }
 
 bootstrap();

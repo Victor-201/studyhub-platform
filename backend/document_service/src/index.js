@@ -8,7 +8,11 @@ const PORT = env.PORT || 3003;
 (async () => {
   try {
     // ===== Init RabbitMQ BEFORE starting app =====
-    await initRabbitConnection();
+    try {
+      await initRabbitConnection();
+    } catch (err) {
+      console.error("[BOOT] RabbitMQ init failed:", err);
+    }
 
     // ===== Create app =====
     const app = createApp();
@@ -18,7 +22,7 @@ const PORT = env.PORT || 3003;
       console.log(`[Document Service] running on port ${PORT}`);
     });
   } catch (err) {
-    console.error("[FATAL] Failed to start Group Service:", err);
+    console.error("[FATAL] Failed to start Document Service:", err);
     process.exit(1);
   }
 })();
