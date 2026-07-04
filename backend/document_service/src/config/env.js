@@ -12,9 +12,8 @@ export const env = {
   PORT: Number(process.env.PORT || 3003),
   BASE_URL: process.env.BASE_URL || "http://localhost:3003",
 
-  // MySQL
   DB_HOST: required("DB_HOST"),
-  DB_PORT: Number(process.env.DB_PORT || 3306),
+  DB_PORT: Number(process.env.DB_PORT || 5432),
   DB_USER: required("DB_USER"),
   DB_PASS: process.env.DB_PASS || "",
   DB_NAME: required("DB_NAME"),
@@ -26,13 +25,13 @@ export const env = {
   JWT_ACCESS_EXPIRES: process.env.JWT_ACCESS_EXPIRES || "15m",
   REFRESH_EXPIRES_DAYS: Number(process.env.REFRESH_EXPIRES_DAYS || 30),
 
-  // Cloudinary
-  CLOUDINARY_CLOUD_NAME: required("CLOUDINARY_CLOUD_NAME"),
-  CLOUDINARY_API_KEY: required("CLOUDINARY_API_KEY"),
-  CLOUDINARY_API_SECRET: required("CLOUDINARY_API_SECRET"),
+  // Cloudinary (optional - set in dashboard)
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || "",
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || "",
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || "",
 
   // ===== RabbitMQ =====
-  RABBITMQ_URL: required("RABBITMQ_URL"), 
+  RABBITMQ_URL: process.env.RABBITMQ_URL || "",
   RABBITMQ_EXCHANGE: process.env.RABBITMQ_EXCHANGE || "studyhub_exchange",
 
   // Other Services

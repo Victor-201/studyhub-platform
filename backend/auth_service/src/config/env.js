@@ -12,7 +12,7 @@ export const env = {
   BASE_URL: process.env.BASE_URL || "http://localhost:3000",
 
   DB_HOST: required("DB_HOST"),
-  DB_PORT: Number(process.env.DB_PORT || 3306),
+  DB_PORT: Number(process.env.DB_PORT || 5432),
   DB_USER: required("DB_USER"),
   DB_PASS: process.env.DB_PASS || "",
   DB_NAME: required("DB_NAME"),
@@ -23,16 +23,16 @@ export const env = {
   JWT_ACCESS_EXPIRES: process.env.JWT_ACCESS_EXPIRES || "15m",
   REFRESH_EXPIRES_DAYS: Number(process.env.REFRESH_EXPIRES_DAYS || 30),
 
-  CLIENT_ID: required("CLIENT_ID"),
-  CLIENT_SECRET: required("CLIENT_SECRET"),
-  REFRESH_TOKEN: required("REFRESH_TOKEN"),
+  CLIENT_ID: process.env.CLIENT_ID || "",
+  CLIENT_SECRET: process.env.CLIENT_SECRET || "",
+  REFRESH_TOKEN: process.env.REFRESH_TOKEN || "",
   REDIRECT_URI: process.env.REDIRECT_URI || "http://localhost:3000/oauth2callback",
-  GMAIL_USER: required("GMAIL_USER"),
+  GMAIL_USER: process.env.GMAIL_USER || "",
 
   FRONTEND_URL: required("FRONTEND_URL"),
 
   // ===== RabbitMQ =====
-  RABBITMQ_URL: required("RABBITMQ_URL"), 
+  RABBITMQ_URL: process.env.RABBITMQ_URL || "",
   RABBITMQ_EXCHANGE: process.env.RABBITMQ_EXCHANGE || "studyhub_exchange",
 };
 
