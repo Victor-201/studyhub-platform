@@ -5,6 +5,7 @@ import { getChannel } from "./connection.js";
  */
 export async function createConsumer(queueName, handler) {
   const channel = getChannel();
+  if (!channel) return;
   await channel.assertQueue(queueName, { durable: true });
 
   channel.consume(

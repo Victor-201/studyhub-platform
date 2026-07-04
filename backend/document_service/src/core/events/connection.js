@@ -21,7 +21,6 @@ export async function initRabbitConnection() {
 }
 
 export function getChannel() {
-  if (!channel) throw new Error('[RABBIT] Channel not initialized');
   return channel;
 }
 

@@ -5,6 +5,7 @@ import { getChannel, EXCHANGE } from "./connection.js";
  */
 export async function publishEvent(routingKey, payload) {
   const channel = getChannel();
+  if (!channel) return;
 
   channel.publish(
     EXCHANGE,
