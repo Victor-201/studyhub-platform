@@ -9,6 +9,7 @@ export const pool = new pg.Pool({
   port: Number(env.DB_PORT) || 5432,
   max: Number(env.DB_POOL_SIZE) || 10,
   connectionTimeoutMillis: 20000,
+  ssl: { rejectUnauthorized: true },
 });
 
 pool.on("error", (err) => {

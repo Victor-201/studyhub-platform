@@ -1,0 +1,24 @@
+{
+  "name": "studyhub-platform",
+  "version": "1.0.0",
+  "description": "Social learning platform for students. Share study materials, create study groups, real-time chat, threaded comments, and ratings.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Victor-201/studyhub-platform.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Victor-201/studyhub-platform/issues"
+  },
+  "homepage": "https://github.com/Victor-201/studyhub-platform#readme",
+  "dependencies": {
+    "pg": "^8.22.0"
+  }
+}
