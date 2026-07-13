@@ -126,7 +126,8 @@ plugins:
   - name: cors
     config:
       origins:
-        - "*"
+        - https://studyhub-platform.pages.dev
+        - http://localhost:5173
       methods:
         - GET
         - POST
@@ -143,3 +144,4 @@ plugins:
         - X-Auth-Token
       credentials: true
       max_age: 3600
+      preflight_continue: true
