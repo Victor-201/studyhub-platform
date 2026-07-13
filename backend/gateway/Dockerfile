@@ -5,7 +5,7 @@ COPY kong/kong.yml /usr/local/kong/declarative/kong.yml
 ENV KONG_DATABASE=off
 ENV KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.yml
 ENV KONG_PROXY_LISTEN=0.0.0.0:${PORT:-8000}
-ENV KONG_ADMIN_LISTEN=0.0.0.0:${PORT:-8000}
+ENV KONG_ADMIN_LISTEN=127.0.0.1:8001
 ENV KONG_PROXY_ACCESS_LOG=/dev/stdout
 ENV KONG_ADMIN_ACCESS_LOG=/dev/stdout
 ENV KONG_PROXY_ERROR_LOG=/dev/stderr
