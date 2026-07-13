@@ -4,7 +4,7 @@ _transform: true
 services:
   # Health check endpoint (returns 200 for Render health checks)
   - name: health-service
-    url: http://httpbin.org/anything
+    url: https://httpbin.org/anything
     routes:
       - name: health-route
         paths:
@@ -15,7 +15,7 @@ services:
 
 
   - name: auth-service
-    url: http://sh-auth-service.onrender.com
+    url: https://sh-auth-service.onrender.com
     routes:
       - name: auth-routes
         paths:
@@ -29,7 +29,7 @@ services:
           - DELETE
 
   - name: user-service
-    url: http://sh-user-service.onrender.com
+    url: https://sh-user-service.onrender.com
     routes:
       - name: user-routes
         paths:
@@ -43,7 +43,7 @@ services:
           - DELETE
 
   - name: group-service
-    url: http://sh-group-service.onrender.com
+    url: https://sh-group-service.onrender.com
     routes:
       - name: group-routes
         paths:
@@ -57,7 +57,7 @@ services:
           - DELETE
 
   - name: document-service
-    url: http://sh-document-service.onrender.com
+    url: https://sh-document-service.onrender.com
     routes:
       - name: document-routes
         paths:
@@ -71,7 +71,7 @@ services:
           - DELETE
 
   - name: chat-service
-    url: http://sh-chat-service.onrender.com
+    url: https://sh-chat-service.onrender.com
     routes:
       - name: chat-routes
         paths:
@@ -85,7 +85,7 @@ services:
           - DELETE
 
   - name: notification-service
-    url: http://sh-notification-service.onrender.com
+    url: https://sh-notification-service.onrender.com
     routes:
       - name: notification-routes
         paths:
