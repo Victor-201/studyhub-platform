@@ -16,6 +16,10 @@ services:
 
   - name: auth-service
     url: https://sh-auth-service.onrender.com
+    tls_verify: false
+    connect_timeout: 30000
+    read_timeout: 60000
+    write_timeout: 60000
     routes:
       - name: auth-routes
         paths:
@@ -30,6 +34,10 @@ services:
 
   - name: user-service
     url: https://sh-user-service.onrender.com
+    tls_verify: false
+    connect_timeout: 30000
+    read_timeout: 60000
+    write_timeout: 60000
     routes:
       - name: user-routes
         paths:
@@ -44,6 +52,10 @@ services:
 
   - name: group-service
     url: https://sh-group-service.onrender.com
+    tls_verify: false
+    connect_timeout: 30000
+    read_timeout: 60000
+    write_timeout: 60000
     routes:
       - name: group-routes
         paths:
@@ -58,6 +70,10 @@ services:
 
   - name: document-service
     url: https://sh-document-service.onrender.com
+    tls_verify: false
+    connect_timeout: 30000
+    read_timeout: 60000
+    write_timeout: 60000
     routes:
       - name: document-routes
         paths:
@@ -72,6 +88,10 @@ services:
 
   - name: chat-service
     url: https://sh-chat-service.onrender.com
+    tls_verify: false
+    connect_timeout: 30000
+    read_timeout: 60000
+    write_timeout: 60000
     routes:
       - name: chat-routes
         paths:
@@ -86,6 +106,10 @@ services:
 
   - name: notification-service
     url: https://sh-notification-service.onrender.com
+    tls_verify: false
+    connect_timeout: 30000
+    read_timeout: 60000
+    write_timeout: 60000
     routes:
       - name: notification-routes
         paths:
