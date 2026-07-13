@@ -7,11 +7,15 @@ import { initRabbitConnection } from "./core/events/connection.js";
 import { publishPendingEventsLoop } from "./core/events/publish.js";
 import OutboxRepository from "./repos/OutboxRepository.js";
 import OutboxService from "./services/OutboxService.js";
+import { runSeed } from "./seed.js";
 
 const PORT = env.PORT || 3000;
 
 async function bootstrap() {
-  // 1) Start HTTP app
+  // 1) Auto-seed database if empty
+  await runSeed();
+
+  // 2) Start HTTP app
   const app = createApp();
   app.listen(PORT, () => {
     console.log(`[Auth Service] running on port ${PORT}`);
