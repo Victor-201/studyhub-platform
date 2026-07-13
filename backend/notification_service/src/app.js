@@ -22,7 +22,10 @@ export function createApp() {
 
     // ===== Middlewares =====
     app.use(helmet());
-    app.use(cors());
+    app.use(cors({
+      origin: ["https://studyhub-platform.pages.dev", "http://localhost:5173"],
+      credentials: true,
+    }));
     app.use(express.json({ limit: "10mb" }));
     app.use(express.urlencoded({ extended: true }));
     app.use(morgan(env.LOG_FORMAT || "dev"));

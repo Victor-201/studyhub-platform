@@ -41,7 +41,10 @@ export function createApp() {
 
   // Middlewares
   app.use(helmet());
-  app.use(cors());
+  app.use(cors({
+    origin: ["https://studyhub-platform.pages.dev", "http://localhost:5173"],
+    credentials: true,
+  }));
   app.use(morgan("dev"));
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
