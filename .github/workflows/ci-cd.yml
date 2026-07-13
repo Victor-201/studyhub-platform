@@ -199,18 +199,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
-          cache-dependency-path: frontend/web/yarn.lock
+          cache: 'npm'
+          cache-dependency-path: frontend/web/package-lock.json
 
-      - run: yarn install --frozen-lockfile
+      - run: npm ci
+        working-directory: frontend/web
 
       - name: Lint
-        run: yarn lint --max-warnings 0
+        run: npm run lint -- --max-warnings 0
 
       - name: Build (verify)
         env:
           VITE_API_GATEWAY_URL: ${{ secrets.VITE_API_GATEWAY_URL }}
-        run: yarn build
+        run: npm run build
 
       - name: Upload dist
         if: github.ref == 'refs/heads/main'
