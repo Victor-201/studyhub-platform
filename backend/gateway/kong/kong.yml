@@ -151,4 +151,4 @@ plugins:
         - X-Auth-Token
       credentials: true
       max_age: 3600
-      preflight_continue: true
+      preflight_continue: false
