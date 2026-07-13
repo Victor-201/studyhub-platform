@@ -31,6 +31,8 @@ services:
           - PUT
           - PATCH
           - DELETE
+          - OPTIONS
+
 
   - name: user-service
     url: https://sh-user-service.onrender.com
@@ -49,6 +51,7 @@ services:
           - PUT
           - PATCH
           - DELETE
+          - OPTIONS
 
   - name: group-service
     url: https://sh-group-service.onrender.com
@@ -67,6 +70,7 @@ services:
           - PUT
           - PATCH
           - DELETE
+          - OPTIONS
 
   - name: document-service
     url: https://sh-document-service.onrender.com
@@ -85,6 +89,7 @@ services:
           - PUT
           - PATCH
           - DELETE
+          - OPTIONS
 
   - name: chat-service
     url: https://sh-chat-service.onrender.com
@@ -103,6 +108,7 @@ services:
           - PUT
           - PATCH
           - DELETE
+          - OPTIONS
 
   - name: notification-service
     url: https://sh-notification-service.onrender.com
@@ -121,6 +127,7 @@ services:
           - PUT
           - PATCH
           - DELETE
+          - OPTIONS
 
 plugins:
   - name: cors
