@@ -1,20 +1,12 @@
-FROM public.ecr.aws/kong/kong:3.6
+FROM node:20-alpine
 
-COPY kong/kong.yml /usr/local/kong/declarative/kong.yml
+WORKDIR /app
 
-ENV KONG_DATABASE=off
-ENV KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.yml
-ENV KONG_PROXY_LISTEN=0.0.0.0:${PORT:-8000}
-ENV KONG_ADMIN_LISTEN=127.0.0.1:8001
-ENV KONG_PROXY_ACCESS_LOG=/dev/stdout
-ENV KONG_ADMIN_ACCESS_LOG=/dev/stdout
-ENV KONG_PROXY_ERROR_LOG=/dev/stderr
-ENV KONG_ADMIN_ERROR_LOG=/dev/stderr
-ENV KONG_NGINX_WORKER_PROCESSES=1
-ENV KONG_LOG_LEVEL=info
+COPY package*.json ./
+RUN npm ci --production --ignore-scripts
+
+COPY server.js ./
 
 EXPOSE ${PORT:-8000}
 
-STOPSIGNAL SIGQUIT
-
-CMD ["kong", "docker-start"]
+CMD ["node", "server.js"]

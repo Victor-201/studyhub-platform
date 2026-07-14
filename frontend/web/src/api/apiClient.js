@@ -40,6 +40,30 @@ apiClient.interceptors.request.use(
   (err) => Promise.reject(err)
 );
 
+// === RESPONSE INTERCEPTOR: RETRY ON 502 ===
+apiClient.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const req = error.config;
+    if (!req?._retryCount) req._retryCount = 0;
+
+    const is502 = error.response?.status === 502;
+    const isNetworkError = !error.response && error.code !== "ERR_CANCELED";
+
+    if ((is502 || isNetworkError) && req._retryCount < 30) {
+      req._retryCount++;
+      console.warn(
+        `[apiClient] attempt ${req._retryCount}/30 - ${req.url}`,
+        is502 ? "502" : "network error"
+      );
+      await new Promise((r) => setTimeout(r, 5000));
+      return apiClient(req);
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // === RESPONSE INTERCEPTOR: REFRESH TOKEN ===
 apiClient.interceptors.response.use(
   (res) => res,
