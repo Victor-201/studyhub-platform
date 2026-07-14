@@ -13,20 +13,12 @@ jobs:
   warm:
     runs-on: ubuntu-latest
     steps:
-      - name: Warm gateway (cold start up to 120s)
+      - name: Ping all services
         run: |
-          url="https://sh-api-gateway.onrender.com/health"
-          echo "Warming $url ..."
-          for i in $(seq 1 20); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null)
-            echo "  attempt $i: $code"
-            [ "$code" = "200" ] && echo "OK" && break
-            sleep 6
-          done
-
-      - name: Ping all backend services
-        run: |
+          set +e
+          PIDS=""
           for url in \
+            https://sh-api-gateway.onrender.com/health \
             https://sh-auth-service.onrender.com/health \
             https://sh-document-service.onrender.com/health \
             https://sh-user-service.onrender.com/health \
@@ -34,11 +26,9 @@ jobs:
             https://sh-chat-service.onrender.com/health \
             https://sh-notification-service.onrender.com/health
           do
-            echo "Pinging $url ..."
-            for i in 1 2 3; do
-              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$url")
-              [ "$code" = "200" ] && echo "  OK" && break
-              echo "  attempt $i: $code, sleeping 15s..."
-              sleep 15
-            done
+            (curl -s -o /dev/null -w "%{http_code}" --max-time 90 "$url" && echo " $url OK") &
+            PIDS="$PIDS $!"
           done
+          echo "Waiting for all services..."
+          for pid in $PIDS; do wait $pid 2>/dev/null; done
+          echo "Done"
