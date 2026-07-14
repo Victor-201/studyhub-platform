@@ -43,6 +43,7 @@ function proxyTo(url, method, headers, body, timeoutMs) {
       port: parsed.port || 443,
       path: parsed.pathname + parsed.search,
       method: method,
+      headers: headers,
       timeout: timeoutMs,
       rejectUnauthorized: false,
     };
