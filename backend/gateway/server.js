@@ -4,6 +4,7 @@ const http = require("http");
 const { URL } = require("url");
 
 const app = express();
+app.use(express.json());
 const PORT = process.env.PORT || 8000;
 
 const ALLOWED_ORIGINS = [
