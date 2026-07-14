@@ -103,7 +103,14 @@ services.forEach(({ path, target }) => {
     const requestBody = req.method !== "GET" && req.method !== "HEAD"
       ? JSON.stringify(req.body || {}) : null;
     try {
-      const result = await proxyWithRetry(targetUrl, req.method, req.headers, requestBody, 30000);
+      // Strip headers that cause issues upstream
+      const fwdHeaders = { ...req.headers };
+      delete fwdHeaders["content-length"];
+      delete fwdHeaders["host"];
+      delete fwdHeaders["connection"];
+      delete fwdHeaders["accept-encoding"];
+      console.log(`[gateway] ${req.method} ${targetUrl} body=${requestBody ? requestBody.substring(0,200) : 'null'}`);
+      const result = await proxyWithRetry(targetUrl, req.method, fwdHeaders, requestBody, 30000);
       const bodyStr = result.body.toString("utf-8");
       if (result.headers["content-type"]) {
         res.setHeader("content-type", result.headers["content-type"]);
