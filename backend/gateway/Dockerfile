@@ -2,8 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --production --ignore-scripts
+COPY package.json ./
+RUN npm install --omit=dev --ignore-scripts
 
 COPY server.js ./
 
