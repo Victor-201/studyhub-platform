@@ -66,7 +66,7 @@ function proxyTo(url, method, headers, body, timeoutMs) {
 }
 
 async function proxyWithRetry(targetPath, method, headers, body, timeoutMs = 30000) {
-  const MAX_RETRIES = 12;
+  const MAX_RETRIES = 20;
   const RETRY_DELAY = 5000;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
