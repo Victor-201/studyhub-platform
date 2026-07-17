@@ -2,11 +2,15 @@
 import env from "./config/env.js";
 import { createApp } from "./app.js";
 import { initRabbitConnection } from "./core/events/connection.js";
+import { runMigrations } from "./db/migrate.js";
 
 const PORT = env.PORT || 3002;
 
 (async () => {
   try {
+    // ===== Run database migrations =====
+    await runMigrations();
+
     // ===== Init RabbitMQ BEFORE starting app =====
     try {
       await initRabbitConnection();
