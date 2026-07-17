@@ -23,7 +23,7 @@ export default class GroupRepository extends BaseRepository {
       g.created_at,
       g.updated_at,
       COUNT(gm.user_id) AS count_member,
-      gm2.role
+      MIN(gm2.role) AS role
     FROM groups g
     LEFT JOIN group_members gm 
       ON g.id = gm.group_id
@@ -111,7 +111,7 @@ export default class GroupRepository extends BaseRepository {
       g.created_at,
       g.updated_at,
       COUNT(gm.user_id) AS count_member,
-      gm2.role
+      MIN(gm2.role) AS role
     FROM groups g
     LEFT JOIN group_members gm ON g.id = gm.group_id
     LEFT JOIN group_members gm2 
@@ -139,7 +139,7 @@ export default class GroupRepository extends BaseRepository {
       g.created_at,
       g.updated_at,
       COUNT(gm.user_id) AS count_member,
-      gm2.role
+      MIN(gm2.role) AS role
     FROM groups g
     LEFT JOIN group_members gm ON g.id = gm.group_id
     LEFT JOIN group_members gm2 
