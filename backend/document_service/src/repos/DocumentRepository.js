@@ -97,7 +97,7 @@ export default class DocumentRepository extends BaseRepository {
             d.visibility = 'PUBLIC'
             ${groupCondition}
           )
-    ORDER BY downloads * 2 + bookmarks * 3 + EXTRACT(EPOCH FROM d.created_at)/1000000 + RANDOM() DESC
+    ORDER BY COALESCE(dd.count_download, 0) * 2 + COALESCE(bm.count_bookmark, 0) * 3 + EXTRACT(EPOCH FROM d.created_at)/1000000 + RANDOM() DESC
     LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
   `;
 
